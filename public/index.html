@@ -591,6 +591,46 @@ body[data-skin=basic] #screen .boot{background:var(--lcd);text-shadow:none}
 .tcard[data-skin=basic] .tp-pads i{background:none;border:1px solid color-mix(in srgb,var(--ink) 18%,transparent);border-radius:3px;box-shadow:none}.tcard[data-skin=basic] .tp-pads i.o{background:var(--orange);border-color:var(--orange)}
 .tcard[data-skin=basic] .tp-scr{border:1px solid color-mix(in srgb,var(--ink) 16%,transparent);border-radius:3px;box-shadow:none}
 
+/* ===== SKIN jarvis: holographic HUD. Dark glass, hairline rules in one projected colour (--line), corner brackets, arc-reactor ring ===== */
+body[data-skin=jarvis]{--hud:var(--line);--brk:linear-gradient(var(--hud),var(--hud)) 0 0/12px 1px no-repeat,linear-gradient(var(--hud),var(--hud)) 0 0/1px 12px no-repeat,linear-gradient(var(--hud),var(--hud)) 100% 0/12px 1px no-repeat,linear-gradient(var(--hud),var(--hud)) 100% 0/1px 12px no-repeat,linear-gradient(var(--hud),var(--hud)) 0 100%/12px 1px no-repeat,linear-gradient(var(--hud),var(--hud)) 0 100%/1px 12px no-repeat,linear-gradient(var(--hud),var(--hud)) 100% 100%/12px 1px no-repeat,linear-gradient(var(--hud),var(--hud)) 100% 100%/1px 12px no-repeat;
+  background:radial-gradient(ellipse at 50% 42%,color-mix(in srgb,var(--hud) 15%,var(--bg)),var(--bg) 70%);background-size:auto}
+body[data-skin=jarvis] .screw,body[data-skin=jarvis] .gloss{display:none}
+body[data-skin=jarvis] .device{border-radius:3px;background:radial-gradient(circle at 50% 50%,#0000 0 190px,color-mix(in srgb,var(--hud) 7%,transparent) 190px 191px,#0000 191px 290px,color-mix(in srgb,var(--hud) 5%,transparent) 290px 291px,#0000 291px),linear-gradient(color-mix(in srgb,var(--hud) 4%,transparent) 1px,#0000 1px) 0 0/28px 28px,linear-gradient(90deg,color-mix(in srgb,var(--hud) 4%,transparent) 1px,#0000 1px) 0 0/28px 28px,linear-gradient(180deg,var(--body),var(--body-2));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--hud) 60%,transparent),0 0 28px color-mix(in srgb,var(--hud) 22%,transparent),inset 0 0 60px color-mix(in srgb,var(--hud) 7%,transparent)}
+body[data-skin=jarvis] .panel{border:1px solid color-mix(in srgb,var(--hud) 24%,transparent);border-radius:2px;background:var(--brk),linear-gradient(180deg,color-mix(in srgb,var(--hud) 8%,transparent),color-mix(in srgb,var(--hud) 2%,transparent));box-shadow:inset 0 0 22px color-mix(in srgb,var(--hud) 6%,transparent)}
+body[data-skin=jarvis] :is(.pad,.btn,.mini,.sess,.seg button.on,.send){border:1px solid color-mix(in srgb,var(--hud) 50%,transparent);border-radius:2px;background:color-mix(in srgb,var(--hud) 8%,var(--key));color:var(--ink);box-shadow:inset 0 0 10px color-mix(in srgb,var(--hud) 12%,transparent)}
+body[data-skin=jarvis] :is(.pad,.btn,.mini,.sess):hover{border-color:var(--hud);box-shadow:inset 0 0 12px color-mix(in srgb,var(--hud) 20%,transparent),0 0 10px color-mix(in srgb,var(--hud) 35%,transparent)}
+body[data-skin=jarvis] :is(.pad,.btn,.mini,.sess,.send):active{transform:translateY(1px);box-shadow:inset 0 0 14px color-mix(in srgb,var(--hud) 35%,transparent)}
+body[data-skin=jarvis] :is(.pad.on,.mini.o,.btn.go,.seg button.on.warn,.send){border-color:var(--orange);background:var(--orange);color:var(--on-accent);box-shadow:0 0 14px color-mix(in srgb,var(--orange) 60%,transparent)}
+body[data-skin=jarvis] .send:disabled{background:var(--well);color:var(--mute);border-color:color-mix(in srgb,var(--hud) 20%,transparent);box-shadow:none}
+body[data-skin=jarvis] :is(.lcd,main,.inputwrap,.avwrap){border:1px solid color-mix(in srgb,var(--hud) 55%,transparent);border-radius:2px;box-shadow:0 0 14px color-mix(in srgb,var(--hud) 16%,transparent),inset 0 0 24px color-mix(in srgb,var(--hud) 7%,transparent)}
+body[data-skin=jarvis] :is(main,.inputwrap){background:var(--brk),var(--lcd)}
+body[data-skin=jarvis] .seg{background:var(--well);border:1px solid color-mix(in srgb,var(--hud) 28%,transparent);border-radius:2px;box-shadow:none;padding:2px}
+body[data-skin=jarvis] .seg button{border-radius:1px}
+body[data-skin=jarvis] .seg button.on{background:color-mix(in srgb,var(--hud) 20%,transparent);border-color:transparent;box-shadow:inset 0 -2px 0 var(--hud)}
+body[data-skin=jarvis] .seg button.on.warn{box-shadow:none}
+body[data-skin=jarvis] .tog{border:1px solid color-mix(in srgb,var(--hud) 45%,transparent);border-radius:3px;background:var(--well);box-shadow:inset 0 0 8px color-mix(in srgb,var(--hud) 15%,transparent)}
+body[data-skin=jarvis] .tog::after{box-sizing:border-box;width:18px;height:18px;top:50%;margin-top:-9px;left:3px;border-radius:2px;background:var(--mute);box-shadow:none}
+body[data-skin=jarvis] .tog.on{background:color-mix(in srgb,var(--orange) 26%,var(--well));border-color:var(--orange);box-shadow:0 0 10px color-mix(in srgb,var(--orange) 45%,transparent)}
+body[data-skin=jarvis] .tog.on::after{left:calc(100% - 21px);background:var(--orange);box-shadow:0 0 8px var(--orange)}
+body[data-skin=jarvis] .knob{background:radial-gradient(circle,var(--key) 0 55%,color-mix(in srgb,var(--hud) 25%,var(--key)) 56%);border:2px solid var(--hud);box-shadow:0 0 14px color-mix(in srgb,var(--hud) 40%,transparent),inset 0 0 10px color-mix(in srgb,var(--hud) 25%,transparent)}
+body[data-skin=jarvis] .led.on i{box-shadow:0 0 12px var(--lc),0 0 0 2px color-mix(in srgb,var(--lc) 25%,transparent)}
+body[data-skin=jarvis] .sheet{border:1px solid color-mix(in srgb,var(--hud) 65%,transparent);border-radius:3px;background:var(--brk),linear-gradient(180deg,var(--body),var(--body-2));box-shadow:0 0 0 1px #000,0 0 40px color-mix(in srgb,var(--hud) 28%,transparent)}
+body[data-skin=jarvis] :is(.tool,.perm,.msg.user .body){border-radius:2px}
+body[data-skin=jarvis] .logo{letter-spacing:.2em;font-weight:700;text-shadow:0 0 12px color-mix(in srgb,var(--hud) 70%,transparent)}
+body[data-skin=jarvis] .logo i{background:radial-gradient(circle,var(--hud) 0 24%,#0000 28%);border:2px solid var(--hud);box-shadow:0 0 10px var(--hud),inset 0 0 6px var(--hud)}
+body[data-skin=jarvis] .sheet h2 i{background:radial-gradient(circle,var(--hud) 0 24%,#0000 28%);border:2px solid var(--hud);box-shadow:0 0 8px var(--hud)}
+body[data-skin=jarvis] :is(.label,.pad .n,.seg button,.btn,.mini,.send){text-transform:uppercase;letter-spacing:.16em}
+body[data-skin=jarvis] :is(.lcd .v,.screenbar,.empty .big){text-shadow:0 0 7px color-mix(in srgb,var(--lcd-ink) 50%,transparent)}
+body[data-skin=jarvis] .avwrap{background:#02080d;isolation:isolate}
+body[data-skin=jarvis] .avwrap::after{background:var(--hud);mix-blend-mode:color;z-index:1}   /* the avatar canvas is drawn cream-on-dark; the colour blend projects it in the HUD hue at full brightness */
+body[data-skin=jarvis] .avwrap::before{background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--hud) 14%,transparent),transparent)}
+body[data-skin=jarvis] #screen .boot{background:var(--lcd);text-shadow:none}
+.tcard[data-skin=jarvis] .tp{background:radial-gradient(ellipse at 50% 42%,color-mix(in srgb,var(--line) 18%,var(--bg)),var(--bg) 75%)}
+.tcard[data-skin=jarvis] .tp-dev{background:none;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:1px;box-shadow:0 0 8px color-mix(in srgb,var(--line) 30%,transparent)}
+.tcard[data-skin=jarvis] .tp-pads i{background:color-mix(in srgb,var(--line) 12%,transparent);border:1px solid color-mix(in srgb,var(--line) 50%,transparent);border-radius:1px;box-shadow:none}.tcard[data-skin=jarvis] .tp-pads i.o{background:var(--orange);border-color:var(--orange);box-shadow:0 0 6px var(--orange)}
+.tcard[data-skin=jarvis] .tp-scr{border:1px solid var(--line);border-radius:1px;background:radial-gradient(circle at 50% 50%,#0000 0 4px,color-mix(in srgb,var(--line) 70%,transparent) 4px 5px,#0000 5px),var(--lcd);box-shadow:inset 0 0 8px color-mix(in srgb,var(--line) 25%,transparent)}
+
 /* ===== SKIN runner: acid neon, cut corners, hazard trim (Marathon-inspired) ===== */
 body[data-skin=runner]{--bw:2px;--bc:var(--edge);--r:0px;--off:0px;--offc:#0000;background-image:none}
 body[data-skin=runner] .device{clip-path:polygon(0 0,calc(100% - 26px) 0,100% 26px,100% 100%,26px 100%,0 calc(100% - 26px));border:0;box-shadow:none;overflow:hidden}
@@ -1914,6 +1954,10 @@ const THEMES = {
            lcd:'#fafaf9', 'lcd-ink':'#111111', 'lcd-dim':'#bdbdb9', 'lcd-mute':'#777773', 'lcd-faint':'#ececea', toolbg:'#f3f3f1' } },
   basicd:{ name:'BASIC DARK', style:'basic', d:'near-black, hairlines, one accent', accent:'#f2f2f2', v:{ edge:'#f2f2f2', line:'#2c2c2c', bg:'#101010', body:'#101010', 'body-2':'#171717', ink:'#ececec', mute:'#7b7b7b', key:'#151515', well:'#202020',
            lcd:'#0b0b0b', 'lcd-ink':'#e8e8e8', 'lcd-dim':'#444444', 'lcd-mute':'#8a8a8a', 'lcd-faint':'#2c2c2c', toolbg:'#161616' } },
+  jarvis:{ name:'JARVIS', style:'jarvis', d:'cyan hologram on deep navy', accent:'#3ee0ff', v:{ line:'#3ee0ff', edge:'#3ee0ff', bg:'#02070d', body:'#061420', 'body-2':'#04101a', ink:'#d8f7ff', mute:'#6aa5b9', key:'#0a2536', well:'#030d15',
+           lcd:'#020b12', 'lcd-ink':'#7fe9ff', 'lcd-dim':'#1c5568', 'lcd-mute':'#47bcd8', 'lcd-faint':'#0a2a38', toolbg:'#06202e' } },
+  stark: { name:'MARK III', style:'jarvis', d:'red and gold armour HUD', accent:'#ff3d2e', v:{ line:'#ffc53d', edge:'#ffc53d', bg:'#0a0305', body:'#190709', 'body-2':'#120507', ink:'#ffefc9', mute:'#b58a62', key:'#2c0f12', well:'#0b0304',
+           lcd:'#0c0405', 'lcd-ink':'#ffc53d', 'lcd-dim':'#6e4a0c', 'lcd-mute':'#d9a02a', 'lcd-faint':'#2a1608', toolbg:'#1d0c0a' } },
   crtamber:{ name:'AMBER', style:'crt', d:'amber phosphor', accent:'#ffb000', v:{ bg:'#000000', body:'#0b0700', 'body-2':'#080500', ink:'#ffcf70', mute:'#b27a12', key:'#140d00', well:'#050300', lcd:'#060300', 'lcd-ink':'#ffb000', 'lcd-dim':'#7a5200', 'lcd-mute':'#d19000', 'lcd-faint':'#2a1a00', toolbg:'#0f0900' } },
   crtice:{ name:'ICE', style:'crt', d:'cyan phosphor', accent:'#6ee7ff', v:{ bg:'#000000', body:'#02090c', 'body-2':'#010608', ink:'#a8f1ff', mute:'#3b93a6', key:'#06151a', well:'#010405', lcd:'#010608', 'lcd-ink':'#6ee7ff', 'lcd-dim':'#1f6f80', 'lcd-mute':'#3dbcd6', 'lcd-faint':'#082630', toolbg:'#04141a' } },
   crtwhite:{ name:'PAPER', style:'crt', d:'monochrome white', accent:'#e8e8e8', v:{ bg:'#000000', body:'#0a0a0a', 'body-2':'#070707', ink:'#e8e8e8', mute:'#8a8a8a', key:'#141414', well:'#030303', lcd:'#050505', 'lcd-ink':'#f0f0f0', 'lcd-dim':'#666666', 'lcd-mute':'#b0b0b0', 'lcd-faint':'#1c1c1c', toolbg:'#101010' } },
@@ -1930,6 +1974,7 @@ const STYLES = {
   crt:      { name:'PHOSPHOR', d:'terminal glow, scanlines', skin:'crt' },
   retro:    { name:'RETRO', d:'beige micro, rainbow stripe', skin:'retro' },
   basic:    { name:'BASIC', d:'flat, quiet, hairlines only', skin:'basic' },
+  jarvis:   { name:'JARVIS', d:'holographic HUD, cyan glow, brackets', skin:'jarvis' },
 };
 for (const th of Object.values(THEMES)) th.skin = STYLES[th.style].skin;
 const ACCENTS = ['#ff4d00', '#ffc400', '#2bd46a', '#2f5bff', '#e6007e', '#8a4dff'];

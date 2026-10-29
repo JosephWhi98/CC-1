@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.4 (pre-release)
+- New JARVIS style: holographic HUD with corner brackets, hairline glow and an arc-reactor logo. Colourways JARVIS (cyan) and MARK III (red and gold)
+
 ## 0.11.3 (pre-release)
 - Toggle switches: fixed the round thumb spilling out of the square tracks in BRUTAL, BLUEPRINT, PHOSPHOR and RUNNER
 
