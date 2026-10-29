@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.2 (pre-release)
+- Mini-games on the display (FLAP, BREAK, SNAKE, HOP): press PLAY under the display. Claude's status stays visible while you play
+- RETRO theme: toggles are now slide switches with a lamp
+- Version number beside the logo; it glows and links to Settings when an update is available
+
 ## 0.11.1 (pre-release)
 - New BLISS display scene: line-art rolling hills and drifting clouds (also in CYCLE)
 - BASIC theme: the avatar screen stays dark so scenes show up
