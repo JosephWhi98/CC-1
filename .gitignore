@@ -1,0 +1,10 @@
+.DS_Store
+dist/
+windows/.cache/
+node_modules/
+*.log
+windows/.cache/
+windows-native/.cache/
+windows-native/bin/
+windows-native/obj/
+public/_t.html
