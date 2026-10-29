@@ -533,28 +533,28 @@ body[data-skin=studio] .pbar{box-shadow:inset 0 1px 2px #0005}
 body[data-skin=brutal]{--bw:3px;--bc:var(--edge);--r:0px;--off:4px;--offc:var(--edge)}
 body[data-skin=crt]{--bw:1px;--bc:color-mix(in srgb,var(--orange) 70%,#000);--r:2px;--off:0px;--offc:#0000;text-shadow:0 0 5px color-mix(in srgb,currentColor 45%,transparent)}
 body[data-skin=blueprint]{--bw:1px;--bc:color-mix(in srgb,var(--line) 82%,transparent);--r:2px;--off:0px;--offc:#0000}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]){background-image:none}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]){background-image:none}
 body[data-skin=blueprint]{background-image:linear-gradient(color-mix(in srgb,var(--line) 9%,transparent) 1px,#0000 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 9%,transparent) 1px,#0000 1px);background-size:24px 24px}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .screw{display:none}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .device{border-radius:var(--r);border:var(--bw) solid var(--bc);box-shadow:calc(var(--off) * 2.5) calc(var(--off) * 2.5) 0 var(--offc)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .panel{border-radius:var(--r);border:var(--bw) solid var(--bc);box-shadow:none}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) :is(.pad,.btn,.mini,.sess,.seg button.on,.send){border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:var(--off) var(--off) 0 var(--offc);background:var(--key);color:var(--ink)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) :is(.pad,.btn,.mini,.sess,.send):active{transform:translate(var(--off),var(--off));box-shadow:0 0 0 var(--offc)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) :is(.pad.on,.mini.o,.btn.go,.seg button.on.warn,.send){background:var(--orange);color:var(--on-accent)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .send:disabled{background:var(--well);color:var(--mute);box-shadow:none}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) :is(.lcd,main,.inputwrap,.avwrap){border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:var(--off) var(--off) 0 var(--offc)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .seg{border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:none;padding:2px;background:var(--well)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .seg button{border-radius:var(--r)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .seg button.on{box-shadow:none;background:var(--ink);color:var(--body)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .seg button.on.warn{background:var(--orange);color:var(--on-accent)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) :is(.tog,.tog::after){border-radius:var(--r)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .tog{border:var(--bw) solid var(--bc);box-shadow:none;background:var(--well)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .tog.on{background:var(--orange)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .tog::after{box-shadow:none;border:var(--bw) solid var(--bc);top:1px;background:var(--key)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .knob{background:var(--key);border:var(--bw) solid var(--bc);box-shadow:var(--off) var(--off) 0 var(--offc)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .led i{border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:none}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) .sheet{border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:calc(var(--off) * 2.5) calc(var(--off) * 2.5) 0 var(--offc)}
-body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro]) :is(.tool,.perm,.msg.user .body){border-radius:var(--r)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .screw{display:none}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .device{border-radius:var(--r);border:var(--bw) solid var(--bc);box-shadow:calc(var(--off) * 2.5) calc(var(--off) * 2.5) 0 var(--offc)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .panel{border-radius:var(--r);border:var(--bw) solid var(--bc);box-shadow:none}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) :is(.pad,.btn,.mini,.sess,.seg button.on,.send){border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:var(--off) var(--off) 0 var(--offc);background:var(--key);color:var(--ink)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) :is(.pad,.btn,.mini,.sess,.send):active{transform:translate(var(--off),var(--off));box-shadow:0 0 0 var(--offc)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) :is(.pad.on,.mini.o,.btn.go,.seg button.on.warn,.send){background:var(--orange);color:var(--on-accent)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .send:disabled{background:var(--well);color:var(--mute);box-shadow:none}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) :is(.lcd,main,.inputwrap,.avwrap){border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:var(--off) var(--off) 0 var(--offc)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .seg{border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:none;padding:2px;background:var(--well)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .seg button{border-radius:var(--r)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .seg button.on{box-shadow:none;background:var(--ink);color:var(--body)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .seg button.on.warn{background:var(--orange);color:var(--on-accent)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) :is(.tog,.tog::after){border-radius:var(--r)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .tog{border:var(--bw) solid var(--bc);box-shadow:none;background:var(--well)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .tog.on{background:var(--orange)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .tog::after{box-shadow:none;border:var(--bw) solid var(--bc);top:1px;background:var(--key)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .knob{background:var(--key);border:var(--bw) solid var(--bc);box-shadow:var(--off) var(--off) 0 var(--offc)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .led i{border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:none}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) .sheet{border:var(--bw) solid var(--bc);border-radius:var(--r);box-shadow:calc(var(--off) * 2.5) calc(var(--off) * 2.5) 0 var(--offc)}
+body:is([data-skin=brutal],[data-skin=crt],[data-skin=blueprint],[data-skin=runner],[data-skin=retro],[data-skin=basic]) :is(.tool,.perm,.msg.user .body){border-radius:var(--r)}
 body[data-skin=crt] :is(.lcd,main,.inputwrap){background:repeating-linear-gradient(0deg,#0000 0 2px,#00000066 2px 3px),var(--lcd)}
 body[data-skin=crt] :is(.pad,.btn,.mini,.sess,.seg button.on):not(.on):not(.o):not(.go){background:transparent}
 body[data-skin=crt] .logo,body[data-skin=crt] .panel .label{text-shadow:0 0 8px color-mix(in srgb,var(--orange) 70%,transparent)}
@@ -563,6 +563,23 @@ body[data-skin=blueprint] .device{background:linear-gradient(color-mix(in srgb,v
 body[data-skin=blueprint] :is(.pad,.btn,.mini,.sess,.seg button.on):not(.on):not(.o):not(.go){background:transparent}
 body[data-skin=brutal] .logo{text-transform:uppercase}
 
+
+/* ===== SKIN basic: flat and quiet. White (or near-black) page, hairline borders, no shadows, one accent ===== */
+body[data-skin=basic]{--bw:1px;--bc:color-mix(in srgb,var(--ink) 14%,transparent);--r:8px;--off:0px;--offc:#0000}
+body[data-skin=basic] .device{border-color:transparent;box-shadow:none;background:var(--body)}
+body[data-skin=basic] .panel{background:transparent}
+body[data-skin=basic] :is(.pad,.btn,.mini,.sess,.seg button.on):not(.on):not(.o):not(.go){background:transparent}
+body[data-skin=basic] :is(.pad,.btn,.mini,.sess):not(.on):not(.o):not(.go):hover{background:var(--well)}
+body[data-skin=basic] :is(.lcd,main,.inputwrap,.avwrap){background:var(--lcd);box-shadow:none}
+body[data-skin=basic] .logo{font-weight:600;letter-spacing:.32em}
+body[data-skin=basic] .led i{box-shadow:none}
+body[data-skin=basic] .avwrap{box-shadow:none;background:var(--lcd)}
+body[data-skin=basic] :is(.avwrap::after,.avwrap::before,.gloss){display:none}
+body[data-skin=basic] #screen .boot{background:var(--lcd);text-shadow:none}
+.tcard[data-skin=basic] .tp{background:var(--bg)}
+.tcard[data-skin=basic] .tp-dev{background:none;border:1px solid color-mix(in srgb,var(--ink) 16%,transparent);border-radius:5px;box-shadow:none}
+.tcard[data-skin=basic] .tp-pads i{background:none;border:1px solid color-mix(in srgb,var(--ink) 18%,transparent);border-radius:3px;box-shadow:none}.tcard[data-skin=basic] .tp-pads i.o{background:var(--orange);border-color:var(--orange)}
+.tcard[data-skin=basic] .tp-scr{border:1px solid color-mix(in srgb,var(--ink) 16%,transparent);border-radius:3px;box-shadow:none}
 
 /* ===== SKIN runner: acid neon, cut corners, hazard trim (Marathon-inspired) ===== */
 body[data-skin=runner]{--bw:2px;--bc:var(--edge);--r:0px;--off:0px;--offc:#0000;background-image:none}
@@ -1696,6 +1713,10 @@ const THEMES = {
            lcd:'#130c03', 'lcd-ink':'#ffb23d', 'lcd-dim':'#6b4510', 'lcd-mute':'#d98e1f', 'lcd-faint':'#2d1c06', toolbg:'#1b1005' } },
   retrop:{ name:'PLATINUM', style:'retro', d:'cool grey case, blue screen', accent:'#009ddc', v:{ edge:'#4a4f5a', bg:'#1a2030', body:'#cfd2d8', 'body-2':'#bcc0c8', ink:'#1b1f28', mute:'#5f6572', key:'#e9ebef', well:'#9aa0ac',
            lcd:'#050c18', 'lcd-ink':'#9fd8ff', 'lcd-dim':'#25507a', 'lcd-mute':'#5aa9e6', 'lcd-faint':'#0c2038', toolbg:'#0a1628' } },
+  basic: { name:'BASIC', style:'basic', d:'white, hairlines, one accent', accent:'#111111', v:{ edge:'#111111', line:'#d9d9d6', bg:'#ffffff', body:'#ffffff', 'body-2':'#f5f5f3', ink:'#111111', mute:'#8c8c88', key:'#ffffff', well:'#ececea',
+           lcd:'#fafaf9', 'lcd-ink':'#111111', 'lcd-dim':'#bdbdb9', 'lcd-mute':'#777773', 'lcd-faint':'#ececea', toolbg:'#f3f3f1' } },
+  basicd:{ name:'BASIC DARK', style:'basic', d:'near-black, hairlines, one accent', accent:'#f2f2f2', v:{ edge:'#f2f2f2', line:'#2c2c2c', bg:'#101010', body:'#101010', 'body-2':'#171717', ink:'#ececec', mute:'#7b7b7b', key:'#151515', well:'#202020',
+           lcd:'#0b0b0b', 'lcd-ink':'#e8e8e8', 'lcd-dim':'#444444', 'lcd-mute':'#8a8a8a', 'lcd-faint':'#2c2c2c', toolbg:'#161616' } },
   crtamber:{ name:'AMBER', style:'crt', d:'amber phosphor', accent:'#ffb000', v:{ bg:'#000000', body:'#0b0700', 'body-2':'#080500', ink:'#ffcf70', mute:'#b27a12', key:'#140d00', well:'#050300', lcd:'#060300', 'lcd-ink':'#ffb000', 'lcd-dim':'#7a5200', 'lcd-mute':'#d19000', 'lcd-faint':'#2a1a00', toolbg:'#0f0900' } },
   crtice:{ name:'ICE', style:'crt', d:'cyan phosphor', accent:'#6ee7ff', v:{ bg:'#000000', body:'#02090c', 'body-2':'#010608', ink:'#a8f1ff', mute:'#3b93a6', key:'#06151a', well:'#010405', lcd:'#010608', 'lcd-ink':'#6ee7ff', 'lcd-dim':'#1f6f80', 'lcd-mute':'#3dbcd6', 'lcd-faint':'#082630', toolbg:'#04141a' } },
   crtwhite:{ name:'PAPER', style:'crt', d:'monochrome white', accent:'#e8e8e8', v:{ bg:'#000000', body:'#0a0a0a', 'body-2':'#070707', ink:'#e8e8e8', mute:'#8a8a8a', key:'#141414', well:'#030303', lcd:'#050505', 'lcd-ink':'#f0f0f0', 'lcd-dim':'#666666', 'lcd-mute':'#b0b0b0', 'lcd-faint':'#1c1c1c', toolbg:'#101010' } },
@@ -1711,6 +1732,7 @@ const STYLES = {
   runner:   { name:'RUNNER', d:'acid neon, cut corners, hazard trim', skin:'runner' },
   crt:      { name:'PHOSPHOR', d:'terminal glow, scanlines', skin:'crt' },
   retro:    { name:'RETRO', d:'beige micro, rainbow stripe', skin:'retro' },
+  basic:    { name:'BASIC', d:'flat, quiet, hairlines only', skin:'basic' },
 };
 for (const th of Object.values(THEMES)) th.skin = STYLES[th.style].skin;
 const ACCENTS = ['#ff4d00', '#ffc400', '#2bd46a', '#2f5bff', '#e6007e', '#8a4dff'];

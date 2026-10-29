@@ -1,1 +1,1 @@
-{ "name": "cc-1", "productName": "CC-1", "version": "0.9.0", "main": "main.js", "description": "TE-style GUI for Claude Code" }
+{ "name": "cc-1", "productName": "CC-1", "version": "0.10.0", "main": "main.js", "description": "TE-style GUI for Claude Code" }

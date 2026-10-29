@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.0 (pre-release)
+- New BASIC style: flat, hairline borders, one accent. Colourways BASIC (white) and BASIC DARK
+- Update check against GitHub releases, with a dot on SETTINGS and a download button (switch off in Settings)
+
 ## 0.9.0 (pre-release)
 - Auto-named sessions (toggle in Settings)
 - Custom colours per theme, savable as named themes
