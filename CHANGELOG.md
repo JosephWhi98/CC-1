@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.3 (pre-release)
+- Toggle switches: fixed the round thumb spilling out of the square tracks in BRUTAL, BLUEPRINT, PHOSPHOR and RUNNER
+
 ## 0.11.2 (pre-release)
 - Mini-games on the display (FLAP, BREAK, SNAKE, HOP): press PLAY under the display. Claude's status stays visible while you play
 - RETRO theme: toggles are now slide switches with a lamp
