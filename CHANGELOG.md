@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.1 (pre-release)
+- New BLISS display scene: line-art rolling hills and drifting clouds (also in CYCLE)
+- BASIC theme: the avatar screen stays dark so scenes show up
+
 ## 0.11.0 (pre-release)
 - UPDATE NOW: one-click in-app update on Mac and Windows. Downloads the release, checks its SHA-256, swaps the app and relaunches (with rollback). MANUAL download is still there
 

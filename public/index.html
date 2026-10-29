@@ -573,7 +573,7 @@ body[data-skin=basic] :is(.pad,.btn,.mini,.sess):not(.on):not(.o):not(.go):hover
 body[data-skin=basic] :is(.lcd,main,.inputwrap,.avwrap){background:var(--lcd);box-shadow:none}
 body[data-skin=basic] .logo{font-weight:600;letter-spacing:.32em}
 body[data-skin=basic] .led i{box-shadow:none}
-body[data-skin=basic] .avwrap{box-shadow:none;background:var(--lcd)}
+body[data-skin=basic] .avwrap{box-shadow:none;background:#0b0c0a}   /* the avatar canvas is drawn light-on-dark in every theme */
 body[data-skin=basic] :is(.avwrap::after,.avwrap::before,.gloss){display:none}
 body[data-skin=basic] #screen .boot{background:var(--lcd);text-shadow:none}
 .tcard[data-skin=basic] .tp{background:var(--bg)}
@@ -1478,6 +1478,29 @@ function drawScene(K, name, t) {
       x += Math.sign(dx || 1) * K.act * Math.max(0, 1 - Math.hypot(dx, dy) / 9) * 6;
       c.globalAlpha = .45; for (let a = 0; a < 8; a++) R(x + Math.round(Math.cos(a * .785) * rr), y + Math.round(Math.sin(a * .785) * rr), 1, 1, K.fg); c.globalAlpha = .6; R(x - rr * .4, y - rr * .5, 1, 1, K.fg);
     }
+  } else if (name === 'bliss') {   // line-art rolling hills and drifting clouds
+    const sh = (K.cx - K.W / 2) * K.act, hy = (x, a, b, ph) => K.H * a + b * Math.sin(x / K.W * 3.3 + ph);
+    const ridge = (a, b, ph, al, par, grass) => {
+      let prev = null;
+      for (let x = 0; x < K.W; x++) {
+        const y = Math.round(hy(x + sh * par, a, b, ph)), y0 = prev == null ? y : prev;
+        c.globalAlpha = al; R(x, Math.min(y, y0), 1, Math.abs(y - y0) + 1, K.fg); prev = y;
+        if (grass && hash(x * 7) % 8 === 0) { const g = y + 2 + hash(x) % 6, sw = Math.round(Math.sin(t * .8 + x)); c.globalAlpha = al * .5; R(x + sw, g, 1, 2, K.fg); }
+      }
+    };
+    ridge(.5, 3.5, 2.2, .26, .06, false); ridge(.68, 7, .5, .6, .12, true);
+    const bumps = [[-.3, .24], [-.02, .34], [.28, .24]];
+    [{ y: .2, w: 22, sp: 1.6, al: .6 }, { y: .34, w: 14, sp: 1, al: .42 }, { y: .08, w: 11, sp: .7, al: .3 }].forEach((cl, i) => {
+      const cx = mod(i * 23 + t * cl.sp - sh * (.15 + .1 * i), K.W + cl.w * 2) - cl.w, by = Math.round(K.H * cl.y + 4);
+      c.globalAlpha = cl.al; R(cx - cl.w * .5, by, cl.w, 1, K.fg);
+      bumps.forEach(([dx, rr], bi) => {
+        const r = cl.w * rr, bx = cx + dx * cl.w;
+        for (let a = Math.PI; a <= 2 * Math.PI; a += .15) {
+          const px = Math.round(bx + Math.cos(a) * r), py = Math.round(by + Math.sin(a) * r * .9);
+          if (!bumps.some(([d2, r2], bj) => bj !== bi && Math.hypot(px - (cx + d2 * cl.w), (py - by) / .9) < cl.w * r2 - .6)) R(px, py, 1, 1, K.fg);
+        }
+      });
+    });
   } else if (name === 'city') {
     [[.1, .18, K.fg, 3], [.2, .3, K.body, 5]].forEach(([par, al, col, bw], li) => {
       const sh = (K.cx - K.W / 2) * K.act * -par; let x = -bw * 2;
@@ -1493,7 +1516,7 @@ function drawScene(K, name, t) {
 }
 const mod = (a, n) => ((a % n) + n) % n;
 const hash = n => { n = Math.imul(Math.floor(n) ^ 61, 2654435761) >>> 0; return (n ^ (n >>> 15)) >>> 0; };
-const CYCLE = ['stars', 'rain', 'grid', 'waves', 'snow', 'fireflies', 'aurora', 'sunset', 'bubbles', 'city'], CYCLE_SEC = 20, FADE_SEC = 3;
+const CYCLE = ['stars', 'rain', 'grid', 'waves', 'snow', 'fireflies', 'aurora', 'sunset', 'bubbles', 'city', 'bliss'], CYCLE_SEC = 20, FADE_SEC = 3;
 let sceneBuf = null;
 function drawSceneFaded(K, name, t, alpha) {   // render a scene on its own layer so it can be blended as a whole
   const { c } = K, cv = c.canvas;
@@ -1894,7 +1917,7 @@ function renderSettingsBody() {
   ${row('FONT', segHtml('font', [['mono', 'SPACE MONO'], ['sans', 'INTER'], ['system', 'SYSTEM']]))}
   ${row('AVATAR', tog('avatar'))}
   <div class="srow col"><div class="label">CHARACTER</div><div class="avpick">${Object.entries(CHARS).map(([id, n]) => `<button class="avc ${cfg.avChar === id ? 'on' : ''}" data-k="avChar" data-v="${id}" aria-pressed="${cfg.avChar === id}"><canvas width="54" height="30" data-char="${id}"></canvas><span>${n}</span></button>`).join('')}</div></div>
-  ${row('SCENE', segHtml('avScene', [['none', 'NONE'], ['cycle', 'CYCLE'], ['stars', 'STARS'], ['rain', 'RAIN'], ['grid', 'GRID'], ['waves', 'WAVES'], ['snow', 'SNOW'], ['fireflies', 'FLIES'], ['aurora', 'AURORA'], ['sunset', 'SUNSET'], ['bubbles', 'BUBBLES'], ['city', 'CITY']]).replace('class="seg"', 'class="seg wrap"'))}
+  ${row('SCENE', segHtml('avScene', [['none', 'NONE'], ['cycle', 'CYCLE'], ['stars', 'STARS'], ['rain', 'RAIN'], ['grid', 'GRID'], ['waves', 'WAVES'], ['snow', 'SNOW'], ['fireflies', 'FLIES'], ['aurora', 'AURORA'], ['sunset', 'SUNSET'], ['bubbles', 'BUBBLES'], ['city', 'CITY'], ['bliss', 'BLISS']]).replace('class="seg"', 'class="seg wrap"'))}
   ${row('MOTION', segHtml('avMotion', [['lively', 'LIVELY'], ['calm', 'CALM']]))}
   ${row('SCANLINES', tog('scan'))}
   ${row('DOT GRID', tog('dots'))}
