@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.0 (pre-release)
+- UPDATE NOW: one-click in-app update on Mac and Windows. Downloads the release, checks its SHA-256, swaps the app and relaunches (with rollback). MANUAL download is still there
+
 ## 0.10.0 (pre-release)
 - New BASIC style: flat, hairline borders, one accent. Colourways BASIC (white) and BASIC DARK
 - Update check against GitHub releases, with a dot on SETTINGS and a download button (switch off in Settings)

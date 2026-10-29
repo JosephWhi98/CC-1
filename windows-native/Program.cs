@@ -80,7 +80,8 @@ namespace CC1
   window.cc1Native = {
     pickFolder: function(){ return new Promise(function(r){ pend = r; post({t:'pick'}); }); },
     notify: function(a,b){ post({t:'notify', title:a, body:b}); },
-    theme: function(bg,dark){ post({t:'theme', bg:bg, dark:dark}); }
+    theme: function(bg,dark){ post({t:'theme', bg:bg, dark:dark}); },
+    update: function(stage){ post({t:'update', stage:stage}); }
   };
   window.__cc1Pick = function(p){ if (pend) { var r = pend; pend = null; r(p); } };
   addEventListener('keydown', function(e){
@@ -226,9 +227,34 @@ namespace CC1
                         try { Directory.CreateDirectory(Data); File.WriteAllText(Path.Combine(Data, "theme.txt"), bg + "," + (dark ? "1" : "0")); } catch { }
                         break;
                     case "fs": ToggleFullscreen(); break;
+                    case "update": InstallUpdate((string)m["stage"]); break;
                 }
             }
             catch { }
+        }
+
+        // Hands the staged update (unpacked by server.js) to update.cmd, which swaps the files after we quit and relaunches.
+        void InstallUpdate(string stage)
+        {
+            Action<string> fail = msg => web.CoreWebView2.ExecuteScriptAsync("window.cc1UpdateFail&&cc1UpdateFail(" + new JavaScriptSerializer().Serialize(msg) + ")");
+            try
+            {
+                string root = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
+                string allowed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cc-1", "update") + "\\";
+                if (stage == null || !Path.GetFullPath(stage).StartsWith(allowed, StringComparison.OrdinalIgnoreCase) || !File.Exists(Path.Combine(stage, "CC-1.exe"))) { fail("update package not found"); return; }
+                string script = Path.Combine(root, "app", "update.cmd");
+                if (!File.Exists(script)) { fail("updater script missing"); return; }
+                try { string probe = Path.Combine(root, ".write-test"); File.WriteAllText(probe, "x"); File.Delete(probe); }
+                catch { fail("CC-1 is in a folder it can't change (try C:\\Apps\\CC-1), or download the update manually."); return; }
+                Directory.CreateDirectory(Data);
+                string tmp = Path.Combine(Data, "update.cmd");
+                File.Copy(script, tmp, true);
+                var psi = new ProcessStartInfo("cmd.exe", "/c \"\"" + tmp + "\" " + Process.GetCurrentProcess().Id + " \"" + stage + "\" \"" + root + "\" \"" + Path.Combine(root, ".cc1-old") + "\"\"")
+                { UseShellExecute = false, CreateNoWindow = true };
+                Process.Start(psi);
+                Close();
+            }
+            catch (Exception ex) { fail(ex.Message); }
         }
 
         void PickFolder()

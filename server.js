@@ -336,10 +336,58 @@ async function checkUpdate() {
   const list = await getJson('https://api.github.com/repos/' + REPO + '/releases?per_page=10', { 'User-Agent': 'CC-1/' + VERSION });   // the list (not /latest) so pre-releases count too
   const r = Array.isArray(list) ? list.find(x => !x.draft) : list;
   if (!r || !r.tag_name) throw new Error(!r || !r.message || r.message === 'Not Found' ? 'no releases published yet' : r.message);
-  const assets = (r.assets || []).map(a => ({ name: a.name, url: a.browser_download_url }));
+  const assets = (r.assets || []).map(a => ({ name: a.name, url: a.browser_download_url, size: a.size, digest: a.digest || '' }));
   const v = { current: VERSION, latest: String(r.tag_name).replace(/^v/, ''), newer: newerThan(r.tag_name, VERSION), url: r.html_url, notes: String(r.body || '').slice(0, 1500), assets };
   updCache = { at: Date.now(), v };
   return v;
+}
+// In-app update: download the release asset for this OS, check it against the SHA-256 GitHub publishes, unpack it to a staging
+// folder. The native shell (Swift / C#) then swaps the app and relaunches; this server never replaces files itself.
+const UPD_DIR = path.join(os.homedir(), '.cc-1', 'update');
+const upd = { phase: 'idle', pct: 0, stage: '', version: '', error: '' };
+try { fs.rmSync(UPD_DIR, { recursive: true, force: true }); } catch {}   // leftovers from the previous update
+function fetchFile(url, dest, onPct, hops = 0) {
+  return new Promise((ok, no) => {
+    let u; try { u = new URL(url); } catch (e) { return no(new Error('bad url')); }
+    if (u.protocol !== 'https:' || !/(^|\.)(github\.com|githubusercontent\.com)$/.test(u.hostname)) return no(new Error('refusing to download from ' + u.hostname));
+    require('https').get(url, { headers: { 'User-Agent': 'CC-1/' + VERSION } }, resp => {
+      if ([301, 302, 303, 307, 308].includes(resp.statusCode) && resp.headers.location && hops < 5) { resp.resume(); return fetchFile(new URL(resp.headers.location, url).href, dest, onPct, hops + 1).then(ok, no); }
+      if (resp.statusCode !== 200) { resp.resume(); return no(new Error('download failed (HTTP ' + resp.statusCode + ')')); }
+      const total = +resp.headers['content-length'] || 0, h = crypto.createHash('sha256'), out = fs.createWriteStream(dest); let got = 0;
+      resp.on('data', d => { got += d.length; h.update(d); if (total) onPct(Math.round(got / total * 100)); });
+      resp.pipe(out);
+      out.on('finish', () => ok(h.digest('hex'))); out.on('error', no); resp.on('error', no);
+    }).on('error', no);
+  });
+}
+function runCmd(cmd, args) { return new Promise((ok, no) => { const c = spawn(cmd, args, { windowsHide: true }); let e = ''; c.stderr.on('data', d => { e += d; }); c.on('error', no); c.on('close', code => code === 0 ? ok() : no(new Error(cmd + ' failed: ' + e.trim().slice(0, 200)))); }); }
+function startInstall() {
+  if (['download', 'verify', 'extract'].includes(upd.phase)) return;
+  if (process.platform !== 'darwin' && process.platform !== 'win32') throw new Error('in-app update is only available on macOS and Windows');
+  Object.assign(upd, { phase: 'download', pct: 0, stage: '', version: '', error: '' });
+  (async () => {
+    try {
+      const info = await checkUpdate();
+      if (!info.newer) throw new Error('already up to date');
+      const re = process.platform === 'darwin' ? /-mac\.zip$/ : /-win-x64-native\.zip$/;
+      const a = info.assets.find(x => re.test(x.name));
+      if (!a) throw new Error('this release has no package for your system');
+      const want = (/^sha256:([0-9a-f]{64})$/.exec(a.digest) || [])[1];
+      if (!want) throw new Error('release has no published checksum');
+      upd.version = info.latest;
+      fs.rmSync(UPD_DIR, { recursive: true, force: true }); fs.mkdirSync(UPD_DIR, { recursive: true });
+      const zip = path.join(UPD_DIR, 'update.zip');
+      const got = await fetchFile(a.url, zip, p => { upd.pct = p; });
+      upd.phase = 'verify';
+      if (got !== want) { fs.rmSync(UPD_DIR, { recursive: true, force: true }); throw new Error('checksum mismatch, download discarded'); }
+      upd.phase = 'extract';
+      const dir = path.join(UPD_DIR, 'stage'); fs.mkdirSync(dir);
+      if (process.platform === 'darwin') { await runCmd('/usr/bin/ditto', ['-x', '-k', zip, dir]); if (!fs.existsSync(path.join(dir, 'CC-1.app', 'Contents', 'Info.plist'))) throw new Error('package is missing CC-1.app'); upd.stage = dir; }
+      else { await runCmd('tar', ['-xf', zip, '-C', dir]); const root = path.join(dir, 'CC-1-win-x64-native'); if (!fs.existsSync(path.join(root, 'CC-1.exe'))) throw new Error('package is missing CC-1.exe'); upd.stage = root; }
+      fs.rmSync(zip, { force: true });
+      upd.phase = 'ready'; upd.pct = 100;
+    } catch (e) { upd.phase = 'error'; upd.error = String(e.message || e).slice(0, 200); }
+  })();
 }
 let loginProc = null;
 async function claudeApi(req, res, u, body) {
@@ -511,7 +559,7 @@ async function handle(req, res, isRemote) {
   try {
     const u = new URL(req.url, 'http://x');
     if (u.pathname === '/api/remote') { if (isRemote) return json(res, 403, { error: 'manage remote access from the computer' }); return remoteApi(req, res, req.method === 'POST' ? await readBody(req) : {}); }
-    if (isRemote && (u.pathname.startsWith('/api/claude/') || u.pathname === '/api/projects/add' || u.pathname === '/api/projects/remove' || (u.pathname === '/api/exec' && !remote.allowDanger))) return json(res, 403, { error: 'not available from a remote device' });
+    if (isRemote && (u.pathname.startsWith('/api/claude/') || u.pathname.startsWith('/api/update/') || u.pathname === '/api/projects/add' || u.pathname === '/api/projects/remove' || (u.pathname === '/api/exec' && !remote.allowDanger))) return json(res, 403, { error: 'not available from a remote device' });
     if (req.method === 'GET' && u.pathname === '/api/projects') return json(res, 200, { projects: listProjects().map(p => ({ path: p, name: path.basename(p) })) });
     if (req.method === 'POST' && (u.pathname === '/api/projects/add' || u.pathname === '/api/projects/remove')) {
       const { path: p } = await readBody(req); const list = listProjects();
@@ -547,6 +595,8 @@ async function handle(req, res, isRemote) {
       }
     }
     if (req.method === 'GET' && u.pathname === '/api/version') return json(res, 200, { version: VERSION });
+    if (req.method === 'POST' && u.pathname === '/api/update/install') { try { startInstall(); return json(res, 200, { ok: true }); } catch (e) { return json(res, 200, { ok: false, error: String(e.message || e) }); } }
+    if (req.method === 'GET' && u.pathname === '/api/update/status') return json(res, 200, upd);
     if (req.method === 'GET' && u.pathname === '/api/update') {
       try { return json(res, 200, await checkUpdate()); } catch (e) { return json(res, 200, { current: VERSION, error: String(e.message || e).slice(0, 120) }); }
     }

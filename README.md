@@ -63,4 +63,4 @@ MIT, see `LICENSE`.
 ## Releasing
 Bump `VERSION` and add a `CHANGELOG.md` entry, commit, then run `./release.sh`. It builds the Mac and
 Windows packages, tags `v<version>`, and creates the GitHub release (needs the `gh` CLI, or it tells you
-what to upload by hand). Running copies of the app notice the new release and offer a download.
+what to upload by hand). Running copies of the app notice the new release; UPDATE NOW downloads the asset (checked against the SHA-256 GitHub publishes), unpacks it to `~/.cc-1/update`, and the Swift / C# shell swaps the app (`native/update.sh`, `windows-native/update.cmd`) and relaunches. Release assets must keep the names `CC-1-<ver>-mac.zip` and `CC-1-<ver>-win-x64-native.zip`.

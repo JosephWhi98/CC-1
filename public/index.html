@@ -1921,11 +1921,41 @@ function drawUpdate() {
   if (updInfo.error) b.innerHTML = '<div class="note">Update check failed: ' + esc(updInfo.error) + '</div>';
   else if (!updInfo.newer) b.innerHTML = '<div class="note">You are on the latest version.</div>';
   else {
-    const mac = /Macintosh|Mac OS/.test(navigator.userAgent), a = (updInfo.assets || []).find(x => mac ? /mac/i.test(x.name) : /win/i.test(x.name));
+    const mac = /Macintosh|Mac OS/.test(navigator.userAgent), a = (updInfo.assets || []).find(x => mac ? /mac/i.test(x.name) : /win/i.test(x.name)), self = canSelfUpdate();
     b.innerHTML = '<div class="note" style="color:var(--orange)">UPDATE AVAILABLE · v' + esc(updInfo.latest) + '</div>'
-      + '<div class="foot" style="justify-content:flex-start;gap:8px"><a class="btn" target="_blank" rel="noopener" href="' + esc(a ? a.url : updInfo.url) + '" style="background:var(--orange);color:var(--on-accent);text-decoration:none">DOWNLOAD</a>'
-      + '<a class="btn" target="_blank" rel="noopener" href="' + esc(updInfo.url) + '" style="text-decoration:none">RELEASE NOTES</a></div>';
+      + '<div class="foot" style="justify-content:flex-start;gap:8px">'
+      + (self ? '<button class="btn" id="updGo" style="background:var(--orange);color:var(--on-accent)"' + (updRun ? ' disabled' : '') + '>UPDATE NOW</button>' : '')
+      + '<a class="btn" target="_blank" rel="noopener" href="' + esc(a ? a.url : updInfo.url) + '"' + (self ? '' : ' style="background:var(--orange);color:var(--on-accent);text-decoration:none"') + (self ? ' style="text-decoration:none"' : '') + '>' + (self ? 'MANUAL' : 'DOWNLOAD') + '</a>'
+      + '<a class="btn" target="_blank" rel="noopener" href="' + esc(updInfo.url) + '" style="text-decoration:none">RELEASE NOTES</a></div><div class="note" id="updMsg">' + esc(updMsg) + '</div>';
+    const go = $('#updGo'); if (go) go.onclick = startUpdate;
   }
+}
+const canSelfUpdate = () => !!((window.webkit && webkit.messageHandlers && webkit.messageHandlers.cc1Update) || (window.cc1Native && cc1Native.update));
+let updRun = false, updMsg = '';
+function setUpdMsg(m) { updMsg = m; const e = $('#updMsg'); if (e) e.textContent = m; const g = $('#updGo'); if (g) g.disabled = updRun; }
+window.cc1UpdateFail = m => { updRun = false; setUpdMsg('Could not update: ' + m + ' Use MANUAL instead.'); };
+async function startUpdate() {
+  if (updRun) return;
+  if (state.busy) return setUpdMsg('Finish or stop the running task first, the app restarts when it updates.');
+  updRun = true; setUpdMsg('STARTING…');
+  try {
+    const r = await fetch('/api/update/install', { method: 'POST' }).then(x => x.json());
+    if (!r.ok) throw new Error(r.error);
+    for (;;) {
+      await new Promise(ok => setTimeout(ok, 500));
+      const s = await fetch('/api/update/status').then(x => x.json());
+      if (s.phase === 'download') setUpdMsg('DOWNLOADING… ' + s.pct + '%');
+      else if (s.phase === 'verify') setUpdMsg('CHECKING FILE…');
+      else if (s.phase === 'extract') setUpdMsg('UNPACKING…');
+      else if (s.phase === 'error') throw new Error(s.error);
+      else if (s.phase === 'ready') {
+        setUpdMsg('RESTARTING…');
+        const h = window.webkit && webkit.messageHandlers && webkit.messageHandlers.cc1Update;
+        if (h) h.postMessage({ stage: s.stage }); else cc1Native.update(s.stage);
+        return;   // the shell quits and relaunches us (or calls cc1UpdateFail)
+      }
+    }
+  } catch (e) { updRun = false; setUpdMsg('Could not update: ' + (e.message || e) + '. Use MANUAL instead.'); }
 }
 function fetchUpdate() { return fetch('/api/update').then(r => r.json()).then(d => { updInfo = d; setBadge(); return d; }).catch(() => { updInfo = { error: 'offline' }; }); }
 // quiet check shortly after launch: a dot on the settings button, like the Claude Code update dot

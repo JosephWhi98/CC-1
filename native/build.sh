@@ -6,7 +6,7 @@ VER=$(tr -d '[:space:]' < ../VERSION)
 APP=../dist/CC-1.app
 rm -rf "$APP"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 swiftc -O main.swift -o "$APP/Contents/MacOS/CC-1"
-cp ../server.js ../VERSION "$APP/Contents/Resources/"
+cp ../server.js ../VERSION update.sh "$APP/Contents/Resources/"
 cp -R ../public "$APP/Contents/Resources/public"
 [ -f AppIcon.icns ] && cp AppIcon.icns "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<PL

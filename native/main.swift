@@ -20,6 +20,7 @@ final class App: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDele
         cfg.userContentController.add(self, name: "pickFolder")
         cfg.userContentController.add(self, name: "cc1Theme")
         cfg.userContentController.add(self, name: "cc1Notify")
+        cfg.userContentController.add(self, name: "cc1Update")
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
         web = WKWebView(frame: .zero, configuration: cfg)
@@ -84,11 +85,36 @@ final class App: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDele
             let n = UNMutableNotificationContent(); n.title = d["title"] as? String ?? "CC-1"; n.body = d["body"] as? String ?? ""; n.sound = .default
             UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: n, trigger: nil))
         }
+        if m.name == "cc1Update", let d = m.body as? [String: Any], let stage = d["stage"] as? String { installUpdate(stage) }
         if m.name == "cc1Theme", let d = m.body as? [String: Any] { applyTheme(d); UserDefaults.standard.set(d, forKey: "theme") }
     }
 
     func userNotificationCenter(_ c: UNUserNotificationCenter, didReceive r: UNNotificationResponse, withCompletionHandler done: @escaping () -> Void) {
         NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil); done()
+    }
+
+    // Hands the staged update (unpacked by server.js) to update.sh, which swaps the bundle after we quit and relaunches.
+    func installUpdate(_ stage: String) {
+        func fail(_ msg: String) {
+            let j = String(data: try! JSONSerialization.data(withJSONObject: [msg]), encoding: .utf8)!
+            web.evaluateJavaScript("window.cc1UpdateFail && cc1UpdateFail(" + j + "[0])", completionHandler: nil)
+        }
+        let fm = FileManager.default, appPath = Bundle.main.bundlePath
+        guard (stage as NSString).standardizingPath.hasPrefix(NSHomeDirectory() + "/.cc-1/update/"),
+              fm.fileExists(atPath: stage + "/CC-1.app/Contents/Info.plist") else { return fail("update package not found") }
+        guard appPath.hasSuffix(".app"), fm.isWritableFile(atPath: (appPath as NSString).deletingLastPathComponent) else {
+            return fail("CC-1 is in a folder it can't change. Move it to Applications, or download the update manually.")
+        }
+        guard let script = Bundle.main.path(forResource: "update", ofType: "sh") else { return fail("updater script missing") }
+        let tmp = NSTemporaryDirectory() + "cc1-update.sh"
+        try? fm.removeItem(atPath: tmp)
+        do { try fm.copyItem(atPath: script, toPath: tmp) } catch { return fail("\(error.localizedDescription)") }
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/bash")
+        p.arguments = [tmp, String(ProcessInfo.processInfo.processIdentifier), stage, appPath]
+        p.standardOutput = FileHandle.nullDevice; p.standardError = FileHandle.nullDevice; p.standardInput = FileHandle.nullDevice
+        do { try p.run() } catch { return fail("\(error.localizedDescription)") }
+        NSApp.terminate(nil)
     }
 
     // The window background shows through the transparent title bar, so painting it matches the bar to the theme.

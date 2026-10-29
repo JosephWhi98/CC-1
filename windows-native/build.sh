@@ -41,7 +41,7 @@ OUT=../dist/$NAME; rm -rf "$OUT"; mkdir -p "$OUT/node" "$OUT/app"
 cp -R bin/out/. "$OUT/"
 find "$OUT" -maxdepth 1 \( -name "*.pdb" -o -name "*.xml" -o -name "*.Wpf.dll" \) -delete
 cp $CACHE/node.exe "$OUT/node/node.exe"
-cp ../server.js ../VERSION "$OUT/app/"; cp -R ../public "$OUT/app/public"
+cp ../server.js ../VERSION update.cmd "$OUT/app/"; cp -R ../public "$OUT/app/public"
 cp README.txt "$OUT/README.txt"
 rm -f ../dist/CC-1-$VER-win-x64-native.zip
 (cd ../dist && zip -qry CC-1-$VER-win-x64-native.zip $NAME)
