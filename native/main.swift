@@ -50,20 +50,39 @@ final class App: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDele
     func startServer() {
         guard let res = Bundle.main.resourcePath else { return }
         let fm = FileManager.default
-        let node = ["/opt/homebrew/bin/node", "/usr/local/bin/node", "/usr/bin/node"].first { fm.isExecutableFile(atPath: $0) }
-        guard let nodePath = node else { alert("Node.js not found", "Install Node (brew install node) and relaunch."); return }
+        let home = NSHomeDirectory()
+        // nvm installs live under a per-version folder; try the newest first
+        let nvm = ((try? fm.contentsOfDirectory(atPath: home + "/.nvm/versions/node")) ?? []).sorted { $0.compare($1, options: .numeric) == .orderedDescending }.map { "\(home)/.nvm/versions/node/\($0)/bin/node" }
+        let candidates = ["/opt/homebrew/bin/node", "/usr/local/bin/node", "/usr/bin/node", home + "/.volta/bin/node", home + "/.local/bin/node"] + nvm
+        // a node that exists but won't run (e.g. Homebrew upgraded a library it links to) must be skipped, not used
+        guard let nodePath = candidates.first(where: { fm.isExecutableFile(atPath: $0) && nodeRuns($0) }) else {
+            let broken = candidates.first { fm.isExecutableFile(atPath: $0) }
+            alert(broken == nil ? "Node.js not found" : "Node.js is installed but won't run", broken == nil ? "Install Node (brew install node) and relaunch." : "\(broken!) failed to start. Try: brew reinstall node")
+            return
+        }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: nodePath)
         p.arguments = [res + "/server.js"]
         var env = ProcessInfo.processInfo.environment
-        let home = NSHomeDirectory()
         env["PATH"] = ["\(home)/.local/bin", "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin", env["PATH"] ?? ""].joined(separator: ":")
         env["PORT"] = String(port)
         env["PROJECTS_ROOT"] = defaultRoot
         p.environment = env
         p.standardOutput = FileHandle.nullDevice
         p.standardError = FileHandle.nullDevice
+        p.terminationHandler = { q in
+            if q.terminationStatus != 0 && q.terminationReason == .exit { DispatchQueue.main.async { self.alert("The CC-1 server stopped", "node exited with code \(q.terminationStatus). Try relaunching CC-1.") } }
+        }
         do { try p.run(); server = p } catch { alert("Could not start server", "\(error)") }
+    }
+
+    func nodeRuns(_ path: String) -> Bool {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: path); p.arguments = ["-v"]
+        p.standardOutput = FileHandle.nullDevice; p.standardError = FileHandle.nullDevice; p.standardInput = FileHandle.nullDevice
+        do { try p.run() } catch { return false }
+        p.waitUntilExit()
+        return p.terminationStatus == 0
     }
 
     func webView(_ w: WKWebView, didFailProvisionalNavigation nav: WKNavigation!, withError e: Error) {

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.5 (pre-release)
+- Mac: fixed a blank window on launch when the Homebrew Node is installed but broken (e.g. after an icu4c upgrade). CC-1 now skips a Node that won't run, also finds nvm/Volta installs, and shows an alert instead of an empty window if the server can't start
+
 ## 0.11.4 (pre-release)
 - New JARVIS style: holographic HUD with corner brackets, hairline glow and an arc-reactor logo. Colourways JARVIS (cyan) and MARK III (red and gold)
 
