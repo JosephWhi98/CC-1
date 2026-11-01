@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.0 (pre-release)
+- Image previews: when Claude reads an image (Read on a .png/.jpg/…), the tool card now opens with a thumbnail of it. Click to enlarge. Also shown when you reopen a session
+- Much lower CPU and graphics use: the display's sweep line no longer forces a page layout every frame, the display slows down when idle and nearly stops when CC-1 isn't focused, and image previews in reopened sessions load only as you scroll to them
+
 ## 0.11.5 (pre-release)
 - Mac: fixed a blank window on launch when the Homebrew Node is installed but broken (e.g. after an icu4c upgrade). CC-1 now skips a Node that won't run, also finds nvm/Volta installs, and shows an alert instead of an empty window if the server can't start
 

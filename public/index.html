@@ -131,6 +131,10 @@ main{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(
 .tool .st{width:8px;height:8px;border-radius:50%;background:var(--yellow);animation:blink 1s steps(2) infinite}
 .tool.done .st{background:var(--green);animation:none}
 .tool.err .st{background:var(--orange);animation:none}
+.tool .timg{padding:8px 10px;border-top:1px dashed #0004;display:flex;gap:8px;flex-wrap:wrap}
+.tool .timg img{max-width:100%;max-height:240px;object-fit:contain;border-radius:4px;cursor:zoom-in;border:1px solid color-mix(in srgb,var(--lcd-ink) 40%,transparent);background:repeating-conic-gradient(#8884 0 25%,#0000 0 50%) 0 0/12px 12px}
+.tool .timg img.wait{width:160px;height:120px}   /* holds the space until a lazy image arrives */
+.tool .timg.big img{max-height:none;cursor:zoom-out}
 .tool pre{margin:0;padding:8px 10px;border-top:1px dashed #0004;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:11px}
 .sys{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--lcd-mute);text-align:center;border-top:1px dashed #0003;padding-top:8px}
 .sys.err{color:var(--orange-d);font-weight:700}
@@ -222,9 +226,10 @@ textarea::placeholder{color:var(--lcd-dim)}
 .avwrap::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(rgba(0,0,0,.32) 1px,transparent 1px) 0 0/4px 4px,linear-gradient(90deg,rgba(0,0,0,.32) 1px,transparent 1px) 0 0/4px 4px,
   repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px)}
-.avwrap::before{content:"";position:absolute;left:0;right:0;top:-40%;height:40%;z-index:2;pointer-events:none;
+.avwrap::before{content:"";position:absolute;left:0;right:0;top:0;height:40%;z-index:2;pointer-events:none;will-change:transform;transform:translateY(-100%);
   background:linear-gradient(to bottom,transparent,rgba(255,255,255,.07),transparent);animation:avroll 6s linear infinite}
-@keyframes avroll{to{top:100%}}
+@keyframes avroll{to{transform:translateY(250%)}}   /* transform, not top: animating top lays out the whole page every frame */
+body.unfocused .avwrap::before{animation-play-state:paused}
 /* juice */
 @keyframes msgin{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes userin{0%{opacity:0;transform:translateY(10px) scale(.94)}60%{transform:translateY(-1px) scale(1.012)}100%{opacity:1;transform:none}}
@@ -1001,6 +1006,13 @@ function toolParts(name, input) {
   return { arg, diff: !!d, stat: d ? `<span class="stat"><b class="p">+${d.add}</b><b class="m">−${d.del}</b></span>` : '',
     body: d ? `<div class="diff">${d.html}</div>` : `<pre>${esc(JSON.stringify(i, null, 2))}</pre>` };
 }
+// images inside a tool result (Read on a .png etc.) arrive as base64 blocks; show them as a preview
+function imgsEl(srcs) {
+  const w = document.createElement('div'); w.className = 'timg';
+  for (const src of srcs) { const i = document.createElement('img'); if (!src.startsWith('data:')) { i.loading = 'lazy'; i.className = 'wait'; i.onload = i.onerror = () => { const pin = log.scrollHeight - log.scrollTop - log.clientHeight < 300; i.classList.remove('wait'); if (pin) log.scrollTop = log.scrollHeight; }; } i.src = src; i.alt = 'image read by Claude'; i.title = 'click to enlarge'; i.onclick = () => w.classList.toggle('big'); w.appendChild(i); }
+  return w;
+}
+const imgSrcs = c => (Array.isArray(c) ? c : []).filter(b => b && b.type === 'image' && b.source && b.source.data && /^image\/(png|jpeg|gif|webp)$/.test(b.source.media_type || '')).map(b => `data:${b.source.media_type};base64,${b.source.data}`);
 function resultEl(txt) {
   txt = String(txt || '').slice(0, 20000);
   if (looksDiff(txt)) { const d = document.createElement('div'); d.className = 'diff'; d.innerHTML = diffText(txt, false); return d; }
@@ -1173,10 +1185,11 @@ $('#sess').addEventListener('click', async e => {
   loadSessions();
 });
 $('#sess').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('sess') && e.target.dataset.id) { e.preventDefault(); openSession(e.target.dataset.id); } });
-function renderTool(name, input, result, isError) {
+function renderTool(name, input, result, isError, images) {
   const d = document.createElement('details'); d.className = 'tool ' + (isError ? 'err' : 'done');
   const tp = toolParts(name, input);
   d.innerHTML = `<summary><span class="st"></span><span class="tag">${esc(name).toUpperCase()}</span><span class="arg">${esc(tp.arg)}</span>${tp.stat}</summary>${tp.body}`;
+  if (images && images.length) { d.appendChild(imgsEl(images)); d.open = true; }
   if (result && (!tp.diff || isError)) d.appendChild(resultEl(result));
   log.appendChild(d);
 }
@@ -1246,7 +1259,7 @@ async function loadSessionInto(id) {
   for (const it of items) {
     if (it.role === 'user') { addMsg('YOU', esc(it.text), 'user'); state.turns++; }
     else if (it.role === 'assistant') addMsg('CLAUDE', md(it.text));
-    else renderTool(it.name, it.input, it.result, it.isError);
+    else renderTool(it.name, it.input, it.result, it.isError, Array.from({ length: it.imgs || 0 }, (_, n) => `/api/session-image?project=${encodeURIComponent(state.project)}&id=${id}&tool=${encodeURIComponent(it.id)}&i=${n}`));
   }
   addSys('session resumed · ' + id.slice(0, 8)); refresh(); loadSessions(); scroll();
   fetch(`/api/session-cost?project=${encodeURIComponent(state.project)}&id=${id}`).then(r => r.json()).then(r => {
@@ -1805,11 +1818,28 @@ function fitAv() {
   if (cv.width !== W) cv.width = W; if (cv.height !== H) cv.height = H;
 }
 new ResizeObserver(fitAv).observe($('#avWrap'));
-function avLoop(now) {
-  requestAnimationFrame(avLoop); if (document.hidden || now - avLast < (GAME.on ? 28 : AV.act > 0 || AV.rips.length || AV.parts.length ? 40 : 80)) return; avLast = now;
-  if (!AV.inkAt || now - AV.inkAt > 600) { AV.inkAt = now; AV.ink = getComputedStyle(document.documentElement).getPropertyValue('--lcd-ink').trim() || '#1b2014'; }
-  drawAv(now);
+// frame gap in ms: full speed only while something is moving; slow when idle, near-stopped when nobody is looking
+function avGap(now) {
+  if (document.hidden || !cfg.avatar) return 1000;
+  if (!document.hasFocus()) return state.busy ? 250 : 1000;
+  if (GAME.on) return 28;
+  if (AV.act > 0 || AV.rips.length || AV.parts.length) return 40;
+  if (AV.state !== 'idle') return 80;
+  return now - AV.last > 90000 ? 250 : 125;
 }
+let avTimer = 0;
+function avLoop() {
+  clearTimeout(avTimer);
+  const now = performance.now(), gap = avGap(now);
+  if (!document.hidden && now - avLast >= gap - 2) {
+    avLast = now;
+    if (!AV.inkAt || now - AV.inkAt > 600) { AV.inkAt = now; AV.ink = getComputedStyle(document.documentElement).getPropertyValue('--lcd-ink').trim() || '#1b2014'; }
+    try { drawAv(now); } catch (e) { console.error(e); }   // a bad frame must not stop the loop for good
+  }
+  if (gap <= 40) requestAnimationFrame(avLoop); else avTimer = setTimeout(avLoop, gap);
+}
+function syncFocus() { document.body.classList.toggle('unfocused', !document.hasFocus()); avLoop(); }
+addEventListener('focus', syncFocus); addEventListener('blur', syncFocus); document.addEventListener('visibilitychange', syncFocus);
 const avPos = e => { const r = $('#avWrap').getBoundingClientRect(), cv = $('#avatar'); return [(e.clientX - r.left) / r.width * cv.width, (e.clientY - r.top) / r.height * cv.height]; };
 $('#avWrap').addEventListener('pointermove', e => { const [x, y] = avPos(e); if (AV.mx == null) { AV.sx = x; AV.sy = y; } AV.mx = x; AV.my = y; });
 $('#avWrap').addEventListener('pointerleave', () => { AV.mx = null; });
@@ -1823,7 +1853,7 @@ $('#input').addEventListener('input', () => {
 });
 { const m = location.hash.match(/avatar=(\w+)(?::([\w]+))?/); if (m) { setAvatar(m[1], m[2]); AV.until = 0; } }
 { const mm = location.hash.match(/model=(\w+)/); if (mm) { state.liveModel = mm[1]; updateAvatar(); } }
-requestAnimationFrame(avLoop); updateAvatar();
+requestAnimationFrame(syncFocus); updateAvatar();   // first frame waits for the script to finish: cfg and friends are declared further down
 fetch('/api/claude/settings').then(r => r.json()).then(s => { cliModel = (s.settings && s.settings.model) || ''; updateAvatar(); }).catch(() => {});
 
 // ---------- settings ----------
@@ -2704,7 +2734,8 @@ async function send() {
     const d = tools[c.tool_use_id]; if (!d) return;
     d.classList.add(c.is_error ? 'err' : 'done'); if (!c.is_error) burst(4);
     const txt = Array.isArray(c.content) ? c.content.map(x => x.text || '').join('\n') : String(c.content || '');
-    if (!d.dataset.diff || c.is_error) d.appendChild(resultEl(txt));
+    const im = imgSrcs(c.content); if (im.length) { d.appendChild(imgsEl(im)); d.open = true; }
+    if ((!d.dataset.diff || c.is_error) && (txt || !im.length)) d.appendChild(resultEl(txt));
     scroll();
   }
 

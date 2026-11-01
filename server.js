@@ -147,10 +147,13 @@ function listSessions(proj) {
   }).filter(s => s.title).sort((a, b) => b.mtime - a.mtime).slice(0, 60);
 }
 
+const isImg = x => x && x.type === 'image' && x.source && x.source.data && IMG[x.source.media_type];
+const imgIndex = new Map();
 function loadSession(proj, id) {
-  const items = []; const byTool = {}; let ctx = null;
+  const items = []; const byTool = {}; const imgAt = {}; let ctx = null, pos = 0;
   const lines = fs.readFileSync(path.join(sessionDir(proj), id + '.jsonl'), 'utf8').split('\n');
   for (const line of lines) {
+    const at = pos, len = Buffer.byteLength(line); pos += len + 1;
     let o; try { o = JSON.parse(line); } catch { continue; }
     if (o.isSidechain || o.isMeta || !o.message) continue;
     const c = o.message.content;
@@ -160,16 +163,31 @@ function loadSession(proj, id) {
       if (isReal(t)) items.push({ role: 'user', text: t });
       if (Array.isArray(c)) for (const b of c) if (b.type === 'tool_result' && byTool[b.tool_use_id]) {
         byTool[b.tool_use_id].result = textOf(b.content).slice(0, 4000); byTool[b.tool_use_id].isError = !!b.is_error;
+        const ni2 = Array.isArray(b.content) ? b.content.filter(isImg).length : 0;
+        if (ni2) { byTool[b.tool_use_id].imgs = ni2; imgAt[b.tool_use_id] = { at, len }; }   // previews travel separately (see sessionImage) so opening a session stays light
       }
     } else if (o.type === 'assistant' && Array.isArray(c)) {
       const u = o.message.usage; if (u && o.message.model !== '<synthetic>') ctx = { tokens: (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.output_tokens || 0), model: o.message.model || '' };
       for (const b of c) {
         if (b.type === 'text' && b.text.trim()) items.push({ role: 'assistant', text: b.text });
-        if (b.type === 'tool_use') { const it = { role: 'tool', name: b.name, input: b.input }; byTool[b.id] = it; items.push(it); }
+        if (b.type === 'tool_use') { const it = { role: 'tool', id: b.id, name: b.name, input: b.input }; byTool[b.id] = it; items.push(it); }
       }
     }
   }
+  imgIndex.delete(proj + '\0' + id); imgIndex.set(proj + '\0' + id, imgAt);
+  if (imgIndex.size > 4) imgIndex.delete(imgIndex.keys().next().value);
   return { items, ctx };
+}
+// One image from a tool result. Remembers where each result sits in the transcript, so only that line is read, not the whole file.
+function sessionImage(proj, id, tool, n) {
+  if (!imgIndex.has(proj + '\0' + id)) loadSession(proj, id);
+  const loc = imgIndex.get(proj + '\0' + id)[tool]; if (!loc) return null;
+  const fd = fs.openSync(path.join(sessionDir(proj), id + '.jsonl'), 'r'), buf = Buffer.alloc(loc.len);
+  try { fs.readSync(fd, buf, 0, loc.len, loc.at); } finally { fs.closeSync(fd); }
+  let o; try { o = JSON.parse(buf.toString('utf8')); } catch { return null; }
+  const r = (o.message.content || []).find(b => b.type === 'tool_result' && b.tool_use_id === tool);
+  const im = r && Array.isArray(r.content) && r.content.filter(isImg)[n];
+  return im ? { type: im.source.media_type, data: Buffer.from(im.source.data, 'base64') } : null;
 }
 
 function readBody(req) {
@@ -625,6 +643,14 @@ async function handle(req, res, isRemote) {
       const proj = u.searchParams.get('project'), id = u.searchParams.get('id');
       if (!listProjects().includes(proj) || !/^[\w-]+$/.test(id || '')) return json(res, 400, { error: 'bad request' });
       try { { const r = loadSession(proj, id); return json(res, 200, { items: r.items, ctx: r.ctx }); } } catch { return json(res, 404, { error: 'no such session' }); }
+    }
+    if (req.method === 'GET' && u.pathname === '/api/session-image') {
+      const proj = u.searchParams.get('project'), id = u.searchParams.get('id'), tool = u.searchParams.get('tool');
+      if (!listProjects().includes(proj) || !/^[\w-]+$/.test(id || '') || !/^[\w-]+$/.test(tool || '')) return json(res, 400, { error: 'bad request' });
+      let im = null; try { im = sessionImage(proj, id, tool, Number(u.searchParams.get('i')) || 0); } catch {}
+      if (!im) return json(res, 404, { error: 'no such image' });
+      res.writeHead(200, { 'Content-Type': im.type, 'Content-Length': im.data.length, 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
+      return res.end(im.data);
     }
     if (req.method === 'POST' && req.url === '/api/chat') {
       const b = await readBody(req);
