@@ -133,6 +133,7 @@ main{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(
 .tool.err .st{background:var(--orange);animation:none}
 .tool .timg{padding:8px 10px;border-top:1px dashed #0004;display:flex;gap:8px;flex-wrap:wrap}
 .tool .timg img{max-width:100%;max-height:240px;object-fit:contain;border-radius:4px;cursor:zoom-in;border:1px solid color-mix(in srgb,var(--lcd-ink) 40%,transparent);background:repeating-conic-gradient(#8884 0 25%,#0000 0 50%) 0 0/12px 12px}
+.earlier{display:block;margin:0 auto 12px;flex:none}
 .tool .timg img.wait{width:160px;height:120px}   /* holds the space until a lazy image arrives */
 .tool .timg.big img{max-height:none;cursor:zoom-out}
 .tool pre{margin:0;padding:8px 10px;border-top:1px dashed #0004;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:11px}
@@ -1250,23 +1251,48 @@ async function openSession(id) {
   if (state.busy || id === state.sessionId) return;
   return crtSwap(() => loadSessionInto(id));
 }
-async function loadSessionInto(id) {
-  reset(); state.sessionId = id;
-  const res = await fetch(`/api/session?project=${encodeURIComponent(state.project)}&id=${id}`);
-  if (!res.ok) { state.sessionId = null; return addSys('could not load session', true); }
-  const { items, ctx } = await res.json(); log.innerHTML = '';
-  state.ctx = ctx ? { used: ctx.tokens, win: ctxWindow(ctx.tokens, ctx.model) } : null; drawCtx();
+const SESS_PAGE = 150;   // newest items shown when a session opens; the rest load on request
+const sessUrl = (id, q) => `/api/session?project=${encodeURIComponent(state.project)}&id=${id}&limit=${SESS_PAGE}${q || ''}`;
+function renderItems(items, id) {
   for (const it of items) {
-    if (it.role === 'user') { addMsg('YOU', esc(it.text), 'user'); state.turns++; }
+    if (it.role === 'user') addMsg('YOU', esc(it.text), 'user');
     else if (it.role === 'assistant') addMsg('CLAUDE', md(it.text));
     else renderTool(it.name, it.input, it.result, it.isError, Array.from({ length: it.imgs || 0 }, (_, n) => `/api/session-image?project=${encodeURIComponent(state.project)}&id=${id}&tool=${encodeURIComponent(it.id)}&i=${n}`));
   }
+}
+// the button at the top of the log: fetches the page before `start` and slots it in above what's on screen, without moving the view
+function addEarlier(id, start) {
+  const b = document.createElement('button'); b.className = 'mini earlier'; b.textContent = `LOAD EARLIER · ${start} MORE`;
+  b.onclick = async () => {
+    b.disabled = true; b.textContent = 'LOADING…';
+    try {
+      const res = await fetch(sessUrl(id, `&before=${start}`)); if (!res.ok) throw 0;
+      const d = await res.json(); if (state.sessionId !== id) return;
+      log.style.scrollBehavior = 'auto';   // #log scrolls smoothly; here the view has to stay exactly where it is
+      const top = log.scrollTop, h = log.scrollHeight, last = log.lastChild;
+      renderItems(d.items, id);
+      const f = document.createDocumentFragment(); while (last.nextSibling) f.appendChild(last.nextSibling);
+      b.after(f); b.remove(); if (d.start > 0) addEarlier(id, d.start); log.scrollTop = top + (log.scrollHeight - h); log.style.scrollBehavior = '';
+    } catch { b.disabled = false; b.textContent = `LOAD EARLIER · ${start} MORE`; addSys('could not load earlier messages', true); }
+  };
+  log.prepend(b);
+}
+async function loadSessionInto(id) {
+  reset(); state.sessionId = id;
+  const res = await fetch(sessUrl(id));
+  if (!res.ok) { state.sessionId = null; return addSys('could not load session', true); }
+  const { items, ctx, start, turns } = await res.json(); log.innerHTML = '';
+  state.ctx = ctx ? { used: ctx.tokens, win: ctxWindow(ctx.tokens, ctx.model) } : null; drawCtx();
+  state.turns = turns;
+  log.style.scrollBehavior = 'auto';   // land on the newest message at once: a smooth scroll goes stale as images load in
+  renderItems(items, id);
+  if (start > 0) addEarlier(id, start);
   addSys('session resumed · ' + id.slice(0, 8)); refresh(); loadSessions(); scroll();
   fetch(`/api/session-cost?project=${encodeURIComponent(state.project)}&id=${id}`).then(r => r.json()).then(r => {
     if (state.sessionId !== id) return; const T = r.transcript, tk = r.ledger ? r.ledger.tokens : T;
     state.cost = r.ledger ? r.ledger.cost : 0; state.tokens = tk ? tk.in + tk.out + tk.cacheRead + tk.cacheWrite : 0; refresh();
   }).catch(() => {});
-  log.scrollTop = log.scrollHeight;
+  log.scrollTop = log.scrollHeight; log.style.scrollBehavior = '';
 }
 $('#floppy').addEventListener('click', () => { const f = $('#floppy'); f.classList.toggle('out'); try { if (cfg.sound) clack(true); } catch {} setTimeout(() => { try { if (cfg.sound) clack(false); } catch {} }, 120); });
 $('#btnNewS').onclick = () => { if (!state.busy) crtSwap(() => { reset(); loadSessions(); }); };
@@ -2639,8 +2665,12 @@ async function send() {
   state.ctrl = new AbortController();
 
   let cur = null, curText = '', streamed = false, shown = false; const tools = {};
+  // the whole message is re-rendered each time, so long ones refresh less often; the final text is always flushed
+  let textTimer = 0, textAt = 0;
+  const flushText = () => { clearTimeout(textTimer); textTimer = 0; textAt = performance.now(); if (cur) { cur.innerHTML = md(curText); scroll(); } };
+  const queueText = () => { if (!textTimer) textTimer = setTimeout(flushText, Math.max(0, textAt + Math.min(150, 30 + curText.length / 100) - performance.now())); };
   const startText = () => { curText = ''; cur = addMsg('CLAUDE', ''); cur.classList.add('cursor'); };
-  const endText = () => { if (cur) { cur.classList.remove('cursor'); cur = null; } };
+  const endText = () => { if (cur) { flushText(); cur.classList.remove('cursor'); cur = null; } };
 
   function onEvent(ev) {
     if (ev.type === 'system' && ev.subtype === 'init') { state.sessionId = ev.session_id; state.liveModel = ev.model; updateAvatar(); if (ev.slash_commands) { try { localStorage.setItem('cc1.cmds', JSON.stringify(ev.slash_commands)); } catch {} } if (ev.model) {
@@ -2652,7 +2682,7 @@ async function send() {
       if (e.type === 'message_start') streamed = false;
       if (e.type === 'content_block_start' && e.content_block && e.content_block.type === 'tool_use') setAvatar('tool', e.content_block.name);
       if (e.type === 'content_block_delta' && e.delta.type === 'text_delta') {
-        streamed = true; shown = true; setAvatar('writing'); if (!cur) startText(); curText += e.delta.text; cur.innerHTML = md(curText); scroll();
+        streamed = true; shown = true; setAvatar('writing'); if (!cur) startText(); curText += e.delta.text; queueText();
       }
       if (e.type === 'content_block_stop') { endText(); if (AV.state === 'writing') setAvatar('thinking'); }
     }

@@ -59,21 +59,6 @@ function record(ev) {
   L[ev.session_id] = e;
   try { fs.mkdirSync(path.dirname(LEDGER), { recursive: true }); fs.writeFileSync(LEDGER, JSON.stringify(L)); } catch {}
 }
-// token totals straight from the transcript (covers turns made outside CC-1 too)
-function transcriptTotals(proj, id) {
-  const t = { in: 0, out: 0, cacheRead: 0, cacheWrite: 0, turns: 0, models: {} }, seen = new Map();
-  let raw; try { raw = fs.readFileSync(path.join(sessionDir(proj), id + '.jsonl'), 'utf8'); } catch { return null; }
-  for (const line of raw.split('\n')) {
-    let o; try { o = JSON.parse(line); } catch { continue; }
-    if (o.type === 'user' && !o.isMeta && !o.isSidechain && o.message && typeof textOf(o.message.content) === 'string' && isReal(textOf(o.message.content).trim())) t.turns++;
-    const m = o.message; if (o.type !== 'assistant' || !m || !m.usage || m.model === '<synthetic>') continue;
-    const k = m.id || o.uuid, u = m.usage;
-    const cur = { model: m.model, in: u.input_tokens || 0, out: u.output_tokens || 0, cacheRead: u.cache_read_input_tokens || 0, cacheWrite: u.cache_creation_input_tokens || 0 };
-    const prev = seen.get(k); if (!prev || cur.out >= prev.out) seen.set(k, cur); // streamed blocks repeat usage; keep the final one
-  }
-  for (const c of seen.values()) { t.in += c.in; t.out += c.out; t.cacheRead += c.cacheRead; t.cacheWrite += c.cacheWrite; t.models[c.model] = (t.models[c.model] || 0) + 1; }
-  return t;
-}
 
 // ---- sessions (read from Claude Code's own transcripts) ----
 const sessionDir = proj => path.join(CLAUDE_DIR, proj.replace(/[^a-zA-Z0-9]/g, '-'));
@@ -118,9 +103,9 @@ function deleteSession(proj, id) {
   renameSession(id, '');
   const a = readAuto(); if (a[id]) { delete a[id]; fs.writeFileSync(AUTOT, JSON.stringify(a)); }
 }
-function sessionMarkdown(proj, id, title) {
+async function sessionMarkdown(proj, id, title) {
   const out = ['# ' + (title || 'Claude Code session'), ''];
-  for (const it of loadSession(proj, id).items) {
+  for (const it of (await sessionData(proj, id)).items) {
     if (it.role === 'user') out.push('## You', '', it.text, '');
     else if (it.role === 'assistant') out.push('## Claude', '', it.text, '');
     else out.push('> **' + it.name + '** `' + String((it.input && (it.input.file_path || it.input.command || it.input.pattern || it.input.path || it.input.url)) || '').replace(/`/g, "'").slice(0, 160) + '`', '');
@@ -148,40 +133,73 @@ function listSessions(proj) {
 }
 
 const isImg = x => x && x.type === 'image' && x.source && x.source.data && IMG[x.source.media_type];
-const imgIndex = new Map();
-function loadSession(proj, id) {
-  const items = []; const byTool = {}; const imgAt = {}; let ctx = null, pos = 0;
-  const lines = fs.readFileSync(path.join(sessionDir(proj), id + '.jsonl'), 'utf8').split('\n');
-  for (const line of lines) {
-    const at = pos, len = Buffer.byteLength(line); pos += len + 1;
-    let o; try { o = JSON.parse(line); } catch { continue; }
-    if (o.isSidechain || o.isMeta || !o.message) continue;
-    const c = o.message.content;
-    if (o.type === 'user') {
-      let t = textOf(c).trim(); const ni = Array.isArray(c) ? c.filter(b => b.type === 'image').length : 0;
-      if (ni) t = (t + '\n[' + ni + ' image' + (ni > 1 ? 's' : '') + ' attached]').trim();
-      if (isReal(t)) items.push({ role: 'user', text: t });
-      if (Array.isArray(c)) for (const b of c) if (b.type === 'tool_result' && byTool[b.tool_use_id]) {
-        byTool[b.tool_use_id].result = textOf(b.content).slice(0, 4000); byTool[b.tool_use_id].isError = !!b.is_error;
-        const ni2 = Array.isArray(b.content) ? b.content.filter(isImg).length : 0;
-        if (ni2) { byTool[b.tool_use_id].imgs = ni2; imgAt[b.tool_use_id] = { at, len }; }   // previews travel separately (see sessionImage) so opening a session stays light
+// One pass over a transcript yields everything the UI asks for: messages, context size, token totals and where each image lives.
+function sessionParser() {
+  const items = [], byTool = {}, imgAt = {}, seen = new Map(), totals = { in: 0, out: 0, cacheRead: 0, cacheWrite: 0, turns: 0, models: {} };
+  let ctx = null;
+  return {
+    line(buf, at) {
+      let o; try { o = JSON.parse(buf.toString('utf8')); } catch { return; }
+      // token totals cover sidechains too, and turns made outside CC-1
+      if (o.type === 'user' && !o.isMeta && !o.isSidechain && o.message && isReal(textOf(o.message.content).trim())) totals.turns++;
+      const m = o.message;
+      if (o.type === 'assistant' && m && m.usage && m.model !== '<synthetic>') {
+        const k = m.id || o.uuid, u = m.usage, cur = { model: m.model, in: u.input_tokens || 0, out: u.output_tokens || 0, cacheRead: u.cache_read_input_tokens || 0, cacheWrite: u.cache_creation_input_tokens || 0 };
+        const prev = seen.get(k); if (!prev || cur.out >= prev.out) seen.set(k, cur);   // streamed blocks repeat usage; keep the final one
       }
-    } else if (o.type === 'assistant' && Array.isArray(c)) {
-      const u = o.message.usage; if (u && o.message.model !== '<synthetic>') ctx = { tokens: (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.output_tokens || 0), model: o.message.model || '' };
-      for (const b of c) {
-        if (b.type === 'text' && b.text.trim()) items.push({ role: 'assistant', text: b.text });
-        if (b.type === 'tool_use') { const it = { role: 'tool', id: b.id, name: b.name, input: b.input }; byTool[b.id] = it; items.push(it); }
+      if (o.isSidechain || o.isMeta || !m) return;
+      const c = m.content;
+      if (o.type === 'user') {
+        let t = textOf(c).trim(); const ni = Array.isArray(c) ? c.filter(b => b.type === 'image').length : 0;
+        if (ni) t = (t + '\n[' + ni + ' image' + (ni > 1 ? 's' : '') + ' attached]').trim();
+        if (isReal(t)) items.push({ role: 'user', text: t });
+        if (Array.isArray(c)) for (const b of c) if (b.type === 'tool_result' && byTool[b.tool_use_id]) {
+          byTool[b.tool_use_id].result = textOf(b.content).slice(0, 4000); byTool[b.tool_use_id].isError = !!b.is_error;
+          const n = Array.isArray(b.content) ? b.content.filter(isImg).length : 0;
+          if (n) { byTool[b.tool_use_id].imgs = n; imgAt[b.tool_use_id] = { at, len: buf.length }; }   // previews travel separately (see sessionImage) so opening a session stays light
+        }
+      } else if (o.type === 'assistant' && Array.isArray(c)) {
+        const u = m.usage; if (u && m.model !== '<synthetic>') ctx = { tokens: (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.output_tokens || 0), model: m.model || '' };
+        for (const b of c) {
+          if (b.type === 'text' && b.text.trim()) items.push({ role: 'assistant', text: b.text });
+          if (b.type === 'tool_use') { const it = { role: 'tool', id: b.id, name: b.name, input: b.input }; byTool[b.id] = it; items.push(it); }
+        }
       }
-    }
-  }
-  imgIndex.delete(proj + '\0' + id); imgIndex.set(proj + '\0' + id, imgAt);
-  if (imgIndex.size > 4) imgIndex.delete(imgIndex.keys().next().value);
-  return { items, ctx };
+    },
+    done() {
+      for (const c of seen.values()) { totals.in += c.in; totals.out += c.out; totals.cacheRead += c.cacheRead; totals.cacheWrite += c.cacheWrite; totals.models[c.model] = (totals.models[c.model] || 0) + 1; }
+      return { items, ctx, imgAt, totals, turns: items.filter(i => i.role === 'user').length };
+    },
+  };
 }
-// One image from a tool result. Remembers where each result sits in the transcript, so only that line is read, not the whole file.
-function sessionImage(proj, id, tool, n) {
-  if (!imgIndex.has(proj + '\0' + id)) loadSession(proj, id);
-  const loc = imgIndex.get(proj + '\0' + id)[tool]; if (!loc) return null;
+// Reads in chunks so a huge transcript doesn't stall the server, and keeps the result until the file changes.
+const sessCache = new Map();
+async function parseSessionFile(file) {
+  const P = sessionParser(); let carry = [], pos = 0;
+  for await (const chunk of fs.createReadStream(file, { highWaterMark: 1 << 20 })) {
+    let start = 0, nl;
+    while ((nl = chunk.indexOf(10, start)) !== -1) {
+      const piece = chunk.subarray(start, nl), line = carry.length ? Buffer.concat([...carry, piece]) : piece;
+      carry = []; P.line(line, pos); pos += line.length + 1; start = nl + 1;
+    }
+    if (start < chunk.length) carry.push(chunk.subarray(start));
+  }
+  if (carry.length) P.line(Buffer.concat(carry), pos);
+  return P.done();
+}
+async function sessionData(proj, id) {
+  const file = path.join(sessionDir(proj), id + '.jsonl'), key = proj + '\0' + id, st = fs.statSync(file), sig = st.size + ':' + st.mtimeMs;
+  let e = sessCache.get(key);
+  if (!e || e.sig !== sig) {
+    e = { sig, p: parseSessionFile(file) }; e.p.catch(() => { if (sessCache.get(key) === e) sessCache.delete(key); });
+  }
+  sessCache.delete(key); sessCache.set(key, e);   // newest last
+  if (sessCache.size > 3) sessCache.delete(sessCache.keys().next().value);
+  return e.p;
+}
+// One image from a tool result: only that line of the transcript is read, not the whole file.
+async function sessionImage(proj, id, tool, n) {
+  const loc = (await sessionData(proj, id)).imgAt[tool]; if (!loc) return null;
   const fd = fs.openSync(path.join(sessionDir(proj), id + '.jsonl'), 'r'), buf = Buffer.alloc(loc.len);
   try { fs.readSync(fd, buf, 0, loc.len, loc.at); } finally { fs.closeSync(fd); }
   let o; try { o = JSON.parse(buf.toString('utf8')); } catch { return null; }
@@ -622,7 +640,7 @@ async function handle(req, res, isRemote) {
     if (req.method === 'GET' && u.pathname === '/api/session-cost') {
       const proj = u.searchParams.get('project'), id = u.searchParams.get('id') || '';
       if (!listProjects().includes(proj) || !/^[\w-]+$/.test(id)) return json(res, 400, { error: 'bad request' });
-      return json(res, 200, { ledger: readLedger()[id] || null, transcript: transcriptTotals(proj, id) });
+      return json(res, 200, { ledger: readLedger()[id] || null, transcript: await sessionData(proj, id).then(d => d.totals, () => null) });
     }
     if (req.method === 'POST' && (u.pathname === '/api/session/rename' || u.pathname === '/api/session/delete')) {
       const b = await readBody(req);
@@ -633,7 +651,7 @@ async function handle(req, res, isRemote) {
     if (req.method === 'GET' && u.pathname === '/api/session/markdown') {
       const proj = u.searchParams.get('project'), id = u.searchParams.get('id') || '';
       if (!listProjects().includes(proj) || !SESSION_ID.test(id)) return json(res, 400, { error: 'bad request' });
-      try { return json(res, 200, { text: sessionMarkdown(proj, id, readTitles()[id]) }); } catch { return json(res, 404, { error: 'no such session' }); }
+      try { return json(res, 200, { text: await sessionMarkdown(proj, id, readTitles()[id]) }); } catch { return json(res, 404, { error: 'no such session' }); }
     }
     if (req.method === 'GET' && u.pathname === '/api/sessions') {
       const proj = u.searchParams.get('project'); if (!listProjects().includes(proj)) return json(res, 400, { error: 'unknown project' });
@@ -642,12 +660,16 @@ async function handle(req, res, isRemote) {
     if (req.method === 'GET' && u.pathname === '/api/session') {
       const proj = u.searchParams.get('project'), id = u.searchParams.get('id');
       if (!listProjects().includes(proj) || !/^[\w-]+$/.test(id || '')) return json(res, 400, { error: 'bad request' });
-      try { { const r = loadSession(proj, id); return json(res, 200, { items: r.items, ctx: r.ctx }); } } catch { return json(res, 404, { error: 'no such session' }); }
+      try {
+        const r = await sessionData(proj, id), total = r.items.length, lim = Number(u.searchParams.get('limit')) || total;   // no limit: the whole session
+        const end = Math.min(total, u.searchParams.has('before') ? Math.max(0, Number(u.searchParams.get('before')) || 0) : total), start = Math.max(0, end - lim);
+        return json(res, 200, { items: r.items.slice(start, end), start, total, turns: r.turns, ctx: r.ctx });
+      } catch { return json(res, 404, { error: 'no such session' }); }
     }
     if (req.method === 'GET' && u.pathname === '/api/session-image') {
       const proj = u.searchParams.get('project'), id = u.searchParams.get('id'), tool = u.searchParams.get('tool');
       if (!listProjects().includes(proj) || !/^[\w-]+$/.test(id || '') || !/^[\w-]+$/.test(tool || '')) return json(res, 400, { error: 'bad request' });
-      let im = null; try { im = sessionImage(proj, id, tool, Number(u.searchParams.get('i')) || 0); } catch {}
+      let im = null; try { im = await sessionImage(proj, id, tool, Number(u.searchParams.get('i')) || 0); } catch {}
       if (!im) return json(res, 404, { error: 'no such image' });
       res.writeHead(200, { 'Content-Type': im.type, 'Content-Length': im.data.length, 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
       return res.end(im.data);
