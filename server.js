@@ -12,7 +12,7 @@ const WIN = process.platform === 'win32';
 const PUBLIC = path.join(__dirname, 'public');
 const VERSION = (() => { try { return fs.readFileSync(path.join(__dirname, 'VERSION'), 'utf8').trim(); } catch { return 'dev'; } })();
 const MODES = new Set(['default', 'manual', 'auto', 'acceptEdits', 'plan', 'dontAsk', 'bypassPermissions']);
-const MODELS = new Set(['', 'sonnet', 'opus', 'haiku']);
+const MODELS = new Set(['', 'sonnet', 'opus', 'haiku', 'fable']);
 const EFFORTS = new Set(['', 'low', 'medium', 'high', 'xhigh', 'max']);
 const IMG = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
 const UPLOADS = path.join(require('os').homedir(), '.cc-1', 'uploads');
@@ -353,7 +353,7 @@ function writeAtomic(f, text) {
   fs.writeFileSync(f + '.tmp', text); fs.renameSync(f + '.tmp', f);
 }
 function parseSettings() { const raw = readText(SETTINGS); if (!raw.trim()) return {}; const o = JSON.parse(raw); if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('settings.json is not an object'); return o; }
-const SETTABLE = { 'model': v => ['', 'haiku', 'sonnet', 'opus'].includes(v), 'alwaysThinkingEnabled': v => typeof v === 'boolean',
+const SETTABLE = { 'model': v => ['', 'haiku', 'sonnet', 'opus', 'fable'].includes(v), 'alwaysThinkingEnabled': v => typeof v === 'boolean',
   'permissions.defaultMode': v => ['', 'default', 'manual', 'auto', 'acceptEdits', 'plan', 'dontAsk', 'bypassPermissions'].includes(v),
   'cleanupPeriodDays': v => v === '' || (Number.isInteger(v) && v >= 1 && v <= 3650) };
 const getJson = (url, extra) => new Promise((ok, no) => {

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.12.2 (pre-release)
+- Fable support: pick FABLE in the model selector (also in Settings and `/model fable`). The display glows violet while Fable is working
+
 ## 0.12.1 (pre-release)
 - Huge sessions open much faster: only the newest 150 items load, with a LOAD EARLIER button for the rest. The server no longer stalls while reading a big transcript
 - Long replies stream more smoothly: the message refreshes less often as it grows

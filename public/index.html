@@ -877,7 +877,7 @@ body.remote :is(#btnAdd,#btnTerm){display:none}
     </div>
     <div class="panel ctl cmp">
       <div class="crow"><span class="label">MODEL</span>
-        <div class="seg" id="segModel"><button data-v="" class="on">AUTO</button><button data-v="haiku">HAIKU</button><button data-v="sonnet">SONNET</button><button data-v="opus">OPUS</button></div></div>
+        <div class="seg" id="segModel"><button data-v="" class="on">AUTO</button><button data-v="haiku">HAIKU</button><button data-v="sonnet">SONNET</button><button data-v="opus">OPUS</button><button data-v="fable">FABLE</button></div></div>
       <div class="crow"><span class="label">MODE</span>
         <div class="seg" id="segMode"><button data-v="default" class="on">ASK</button><button data-v="auto">AUTO</button><button data-v="acceptEdits">EDIT</button><button data-v="plan">PLAN</button><button data-v="dontAsk">DENY</button><button data-v="bypassPermissions" data-warn="1">YOLO</button></div></div>
       <div class="crow"><span class="label">EFFORT</span>
@@ -1299,11 +1299,11 @@ $('#btnNewS').onclick = () => { if (!state.busy) crtSwap(() => { reset(); loadSe
 loadProjects();
 
 // ---------- avatar ----------
-const AVC = { haiku: '#ffc400', sonnet: '#ff4d00', opus: '#2f5bff', none: '#8d9484' };
+const AVC = { haiku: '#ffc400', sonnet: '#ff4d00', opus: '#2f5bff', fable: '#b04dff', none: '#8d9484' };
 const AV = { mx: null, my: 0, sx: 0, sy: 0, act: 0, trail: [], rips: [], parts: [], state: 'idle', tool: '', until: 0, last: performance.now(), color: AVC.none, cap: '', ink: '#1b2014' };
 let cliModel = '';
 const avCtx = $('#avatar').getContext('2d');
-const famOf = m => { m = String(m || '').toLowerCase(); return m.includes('haiku') ? 'haiku' : m.includes('sonnet') ? 'sonnet' : m.includes('opus') ? 'opus' : ''; };
+const famOf = m => { m = String(m || '').toLowerCase(); return m.includes('haiku') ? 'haiku' : m.includes('sonnet') ? 'sonnet' : m.includes('opus') ? 'opus' : m.includes('fable') ? 'fable' : ''; };
 function updateAvatar() {
   const fam = famOf(state.model) || famOf(state.liveModel) || famOf(cliModel);
   AV.color = AVC[fam] || AVC.none; $('#avWrap').style.setProperty('--avglow', AV.color + 'aa'); $('#avModel').textContent = (fam || 'auto').toUpperCase();
@@ -2101,14 +2101,14 @@ function renderClaude() {
   const acct = !cl.loaded ? '<div class="note">loading…</div>' : a && a.loggedIn
     ? `<div class="acct"><span class="k">ACCOUNT</span><span class="em">${esc(a.email || 'signed in')}</span><span class="k">PLAN</span><span>${plan ? `<span class="badge">${esc(plan)}</span>` : '—'}</span><span class="k">SIGN-IN</span><span>${esc(a.authMethod || '')}${a.apiProvider && a.apiProvider !== 'firstParty' ? ' · ' + esc(a.apiProvider) : ''}</span>${a.orgName ? `<span class="k">ORG</span><span>${esc(a.orgName)}</span>` : ''}<span class="k">CLI</span><span>${esc(cl.version || '—')}</span></div>`
     : `<div class="acct"><span class="k">ACCOUNT</span><span class="em"><span class="badge off">NOT SIGNED IN</span></span><span class="k">CLI</span><span>${esc(cl.version || 'not found — is Claude Code installed?')}</span></div>`;
-  const known = ['', 'haiku', 'sonnet', 'opus'], m = getp(cl.settings, 'model') || '';
+  const known = ['', 'haiku', 'sonnet', 'opus', 'fable'], m = getp(cl.settings, 'model') || '';
   const upd = updHtml();
   return `<div class="sheet"><h2><i></i>SETTINGS</h2>${tabsHtml()}<div class="label">claude code · shared with the terminal CLI (~/.claude)</div>
   <div class="srow col"><div class="label">ACCOUNT</div>${acct}
     <div class="acts2"><button class="btn" data-act="refresh">REFRESH</button>${a && a.loggedIn ? `<button class="btn danger" data-act="logout">${cl.confirmOut ? 'CLICK AGAIN TO SIGN OUT' : 'SIGN OUT'}</button>` : ''}<button class="btn" data-act="login">${a && a.loggedIn ? 'SWITCH ACCOUNT' : 'SIGN IN'}</button></div></div>
   ${upd}<div>
     ${cl.msg ? `<div class="note">${esc(cl.msg)}</div>` : ''}${cl.err ? `<div class="note err">${esc(cl.err)}</div>` : ''}</div>
-  ${row('CLI MODEL', csegHtml('model', [['', 'UNSET'], ['haiku', 'HAIKU'], ['sonnet', 'SONNET'], ['opus', 'OPUS']]) + `<div class="note">${known.includes(m) ? 'what “AUTO” uses in CC-1 and the terminal' : 'custom value in settings.json: ' + esc(m)}</div>`)}
+  ${row('CLI MODEL', csegHtml('model', [['', 'UNSET'], ['haiku', 'HAIKU'], ['sonnet', 'SONNET'], ['opus', 'OPUS'], ['fable', 'FABLE']]) + `<div class="note">${known.includes(m) ? 'what “AUTO” uses in CC-1 and the terminal' : 'custom value in settings.json: ' + esc(m)}</div>`)}
   ${row('EXT. THINKING', `<button class="tog ${cl.settings.alwaysThinkingEnabled ? 'on' : ''}" data-act="set" data-key="alwaysThinkingEnabled" data-bool="1" aria-label="thinking"></button>`)}
   ${row('CLI PERMISSIONS', csegHtml('permissions.defaultMode', [['', 'UNSET'], ['default', 'ASK'], ['auto', 'AUTO'], ['acceptEdits', 'EDIT'], ['plan', 'PLAN'], ['dontAsk', 'DENY'], ['bypassPermissions', 'YOLO']]) + '<div class="note">default for the terminal CLI. CC-1 uses its own switch.</div>')}
   ${row('KEEP HISTORY', `<input type="number" min="1" max="3650" placeholder="30" value="${cl.settings.cleanupPeriodDays ?? ''}" data-days> <span class="label">DAYS</span>`)}
@@ -2202,7 +2202,7 @@ function renderSettingsBody() {
   ${row('CHECK FOR UPDATES · ASKS GITHUB', tog('updates'))}
   ${row('BOOT-UP EFFECT', tog('boot'))}
   ${row('AUTO-NAME SESSIONS', tog('autoName'))}
-  ${row('DEFAULT MODEL', segHtml('model', [['', 'AUTO'], ['haiku', 'HAIKU'], ['sonnet', 'SONNET'], ['opus', 'OPUS']]))}
+  ${row('DEFAULT MODEL', segHtml('model', [['', 'AUTO'], ['haiku', 'HAIKU'], ['sonnet', 'SONNET'], ['opus', 'OPUS'], ['fable', 'FABLE']]))}
   ${row('DEFAULT EFFORT', segHtml('effort', [['', 'AUTO'], ['low', 'LOW'], ['medium', 'MED'], ['high', 'HIGH'], ['xhigh', 'XHI'], ['max', 'MAX']]))}
   ${row('DEFAULT MODE', segHtml('mode', [['default', 'ASK'], ['auto', 'AUTO'], ['acceptEdits', 'EDIT'], ['plan', 'PLAN'], ['dontAsk', 'DENY'], ['bypassPermissions', 'YOLO']]) + `<div class="label" style="margin-top:6px;text-transform:none;letter-spacing:0">${esc(HINTS[cfg.mode] || '')}</div>`)}
   ${IS_REMOTE ? '' : '<div class="srow col"><div class="label">REMOTE · CONTROL FROM YOUR PHONE</div><div id="remoteBox"></div></div>'}
@@ -2650,8 +2650,8 @@ async function send() {
     if (name === 'model') {
       $('#input').value = ''; closeSlash(); const v = (arg || '').toLowerCase().replace('auto', '').replace('default', '');
       const b = $(`#segModel button[data-v="${v}"]`);
-      if (b && ['', 'haiku', 'sonnet', 'opus'].includes(v)) { b.click(); return addSys('model → ' + (v || 'auto')); }
-      return addSys('usage: /model haiku | sonnet | opus | auto', true);
+      if (b && ['', 'haiku', 'sonnet', 'opus', 'fable'].includes(v)) { b.click(); return addSys('model → ' + (v || 'auto')); }
+      return addSys('usage: /model haiku | sonnet | opus | fable | auto', true);
     }
   }
   closeSlash();
